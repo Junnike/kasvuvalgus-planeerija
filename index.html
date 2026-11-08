@@ -1,0 +1,2190 @@
+<!doctype html>
+<html lang="et">
+<head>
+<meta charset="utf-8">
+<title>Kasvuvalguse kalkulaator V3.1</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ---------- tokens ---------- */
+:root{
+  --bg:#eef3ee; --surface:#ffffff; --surface2:#f4f8f4; --fg:#13241a; --muted:#566a5d; --line:#cfdbd1;
+  --accent:#1c7a4a; --accent-fg:#ffffff; --accent-soft:#d9eee2; --field:#ffffff; --danger:#a8321f;
+  --red:#c2412d; --blue:#2c67c9; --green:#3d9a3d; --farred:#8e2a4b; --track:#e2ebe4;
+  --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --shadow:0 1px 3px rgba(19,36,26,.07);
+  /* report paper */
+  --rep-bg:#ffffff; --rep-fg:#14251b; --rep-head:#0d3d26; --rep-line:#cbd8cf;
+  --rep-accent:#1c7a4a; --rep-muted:#4b6b58; --rep-th:#eef5f0; --rep-hl:#e7f3ec;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c1511; --surface:#131f19; --surface2:#182620; --fg:#e4efe7; --muted:#92a99a; --line:#2a3d32;
+    --accent:#5fcf92; --accent-fg:#052112; --accent-soft:#1d3a2b; --field:#0f1913; --danger:#ff8f7a;
+    --red:#ee7a66; --blue:#7ea6f2; --green:#7fd36b; --farred:#c4607f; --track:#22332a;
+    --shadow:0 1px 3px rgba(0,0,0,.45);
+    --rep-bg:#0f1a14; --rep-fg:#dbe9df; --rep-head:#8fe0b3; --rep-line:#2a3d32;
+    --rep-accent:#5fcf92; --rep-muted:#92a99a; --rep-th:#17261e; --rep-hl:#1d3a2b;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c1511; --surface:#131f19; --surface2:#182620; --fg:#e4efe7; --muted:#92a99a; --line:#2a3d32;
+  --accent:#5fcf92; --accent-fg:#052112; --accent-soft:#1d3a2b; --field:#0f1913; --danger:#ff8f7a;
+  --red:#ee7a66; --blue:#7ea6f2; --green:#7fd36b; --farred:#c4607f; --track:#22332a;
+  --shadow:0 1px 3px rgba(0,0,0,.45);
+  --rep-bg:#0f1a14; --rep-fg:#dbe9df; --rep-head:#8fe0b3; --rep-line:#2a3d32;
+  --rep-accent:#5fcf92; --rep-muted:#92a99a; --rep-th:#17261e; --rep-hl:#1d3a2b;
+  color-scheme:dark;
+}
+
+:root[data-theme="blue"]{
+  /* Sinine = design nr 1 (Rolandi_katseala_plokk4 03.11.2026): ground/card/line/silver/ice/gold */
+  --bg:#0a0d14; --surface:#121722; --surface2:#161c29; --fg:#e6e9ef; --muted:#7f8899; --line:#262d3c;
+  --accent:#8fd6ff; --accent-fg:#06131c; --accent-soft:#17283a; --field:#0d1119; --danger:#d9645b;
+  --red:#d9645b; --blue:#8fd6ff; --green:#6bcf9a; --farred:#c4607f; --track:#1d2434;
+  --shadow:0 1px 3px rgba(0,0,0,.5);
+  --rep-bg:#0f1420; --rep-fg:#e6e9ef; --rep-head:#e3c36a; --rep-line:#262d3c;
+  --rep-accent:#8fd6ff; --rep-muted:#7f8899; --rep-th:#161c29; --rep-hl:#17283a;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{max-width:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--sans);overflow-x:hidden}
+h1{font-size:1.18rem;margin:0;font-weight:600;letter-spacing:-.01em}
+h2{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px;font-weight:600}
+h3{font-size:.85rem;margin:14px 0 6px;font-weight:600}
+.tag{font:500 .72rem var(--mono);background:var(--accent-soft);color:var(--fg);padding:3px 8px;border-radius:3px;white-space:nowrap}
+.hint{font-size:.72rem;color:var(--muted);line-height:1.35;margin:4px 0 0}
+.note{font-size:.78rem;color:var(--muted);margin:6px 0 0}
+.err{font-size:.8rem;color:var(--danger);margin:6px 0 0;overflow-wrap:anywhere}
+
+/* ---------- header ---------- */
+.head{position:sticky;top:0;z-index:40;background:var(--surface);border-bottom:2px solid var(--accent)}
+.topbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;
+  padding:9px max(16px, env(safe-area-inset-left,0px)) 9px max(16px, env(safe-area-inset-right,0px))}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;min-width:0}
+.topact{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;border-radius:0;background:transparent;color:var(--muted);padding:6px 11px;font:500 .82rem var(--sans);cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button:hover{color:var(--fg)}
+.seg button.on{background:var(--accent);color:var(--accent-fg)}
+.steps{display:flex;gap:6px;overflow-x:auto;padding:0 max(16px, env(safe-area-inset-left,0px)) 9px;scrollbar-width:thin}
+.stepbtn{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--surface);
+  color:var(--fg);border-radius:999px;padding:5px 13px 5px 6px;font:500 .84rem var(--sans);cursor:pointer;white-space:nowrap}
+.stepbtn b{display:inline-grid;place-items:center;width:21px;height:21px;border-radius:50%;
+  background:var(--surface2);color:var(--muted);font:600 .72rem var(--mono)}
+.stepbtn:hover{border-color:var(--accent)}
+.stepbtn.on{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.stepbtn.on b{background:rgba(255,255,255,.24);color:var(--accent-fg)}
+
+/* ---------- generic controls ---------- */
+button{font:500 .85rem var(--sans);color:var(--fg);background:var(--surface2);border:1px solid var(--line);
+  border-radius:5px;padding:7px 12px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.pri{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+button.mini{padding:2px 7px;font-size:.78rem}
+input[type=number],select,textarea{width:100%;font:500 .92rem var(--mono);font-variant-numeric:tabular-nums;
+  color:var(--fg);background:var(--field);border:1px solid var(--line);border-radius:4px;padding:6px 8px;min-width:0}
+input[type=file]{width:100%;min-width:0;font:.78rem var(--sans);color:var(--fg)}
+textarea{resize:vertical;min-height:76px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input:disabled,select:disabled,textarea:disabled{opacity:.5}
+.chk{display:flex;gap:7px;align-items:center;color:var(--fg);font-size:.86rem;cursor:pointer}
+.chk input{accent-color:var(--accent);width:16px;height:16px;margin:0}
+.seg{display:flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.seg label{position:relative;flex:1;display:flex;align-items:center;justify-content:center;text-align:center;
+  line-height:1.2;padding:7px 5px;font-size:.8rem;cursor:pointer;color:var(--fg)}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label:has(input:checked){background:var(--accent);color:var(--accent-fg);font-weight:600}
+.seg label:has(input:disabled){opacity:.4;cursor:not-allowed}
+.seg label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:-2px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px;align-items:start}
+.f{display:grid;gap:3px;min-width:0;font-size:.8rem;color:var(--muted)}
+.f.full{grid-column:1/-1}
+.sub{font-size:.78rem;font-weight:600;margin:14px 0 6px;color:var(--fg)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+
+/* ---------- app layout ---------- */
+.app{display:grid;gap:14px;grid-template-columns:minmax(0,1fr);
+  padding:14px max(16px, env(safe-area-inset-left,0px)) 40px max(16px, env(safe-area-inset-right,0px));
+  max-width:1500px;margin:0 auto}
+@media (min-width:760px){
+  .app{grid-template-columns:320px minmax(0,1fr)}
+  .lamps{grid-column:1/-1}
+}
+@media (min-width:1200px){
+  .app{grid-template-columns:340px minmax(0,1fr) 330px;align-items:start}
+  .lamps{grid-column:auto}
+}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:13px;min-width:0;box-shadow:var(--shadow)}
+.panel{align-self:start;position:relative}
+.pstep{display:none}
+.pstep.on{display:block}
+.subh{font-size:.8rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;align-items:start;margin-bottom:9px}
+
+/* ---------- stage ---------- */
+.stage{min-width:0;display:grid;gap:12px;align-content:start}
+.viewtabs{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.viewtab{padding:5px 12px;font-size:.82rem;border-radius:999px}
+.viewtab.on{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.spacer{flex:1}
+.canvaswrap{overflow-x:auto;max-width:100%}
+canvas{display:block;touch-action:pan-y}
+#plan{touch-action:none;cursor:grab}
+#plan.drag{cursor:grabbing}
+#hover{font:500 .82rem var(--mono);font-variant-numeric:tabular-nums;min-height:1.5em;margin-top:6px}
+
+/* ---------- result strip ---------- */
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px}
+.cell{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:6px;padding:7px 9px;min-width:0;box-shadow:var(--shadow)}
+.cell .k{font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cell .v{font:500 1.02rem/1.25 var(--mono);font-variant-numeric:tabular-nums}
+.cell .u{font-size:.66rem;color:var(--muted)}
+
+/* ---------- stats / tables ---------- */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px}
+.stat{background:var(--surface2);border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:5px;padding:8px 10px;min-width:0}
+.stat .k{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.stat .v{font:500 1.15rem/1.25 var(--mono);font-variant-numeric:tabular-nums}
+.stat .u{font-size:.68rem;color:var(--muted)}
+.scroll{overflow:auto;max-width:100%}
+table{border-collapse:collapse;font:.76rem var(--mono);font-variant-numeric:tabular-nums}
+th,td{border:1px solid var(--line);padding:3px 7px;text-align:right;white-space:nowrap}
+thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
+#lampTable td input{width:64px;padding:2px 4px;font-size:.76rem}
+#lampTable td:first-child{color:var(--muted)}
+.sbar{display:flex;height:20px;border-radius:4px;overflow:hidden;background:var(--track);margin-bottom:8px}
+.sbar span{display:block;min-width:0}
+.mix{display:flex;gap:4px 14px;font:500 .78rem var(--mono);font-variant-numeric:tabular-nums;align-items:center;flex-wrap:wrap}
+.dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+/* ---------- target guide ---------- */
+.rng{display:grid;grid-template-columns:minmax(120px,1.4fr) 1fr 88px;gap:8px;align-items:center;
+  margin:5px 0;font-size:.82rem;padding:3px 5px;border-radius:4px}
+.rng.on{background:var(--accent-soft)}
+.rng.on .nm{font-weight:600}
+.rng .vals{font:.74rem var(--mono);color:var(--muted);text-align:right}
+.track{position:relative;height:12px;background:var(--track);border-radius:3px}
+.seg2{position:absolute;top:0;bottom:0;background:var(--accent);opacity:.55;border-radius:3px}
+.rng.on .seg2{opacity:1}
+.mark{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--fg)}
+.chip{display:inline-block;background:var(--accent);color:var(--accent-fg);font:500 .8rem var(--mono);padding:4px 10px;border-radius:4px;margin-top:8px}
+#recText{font-size:.85rem;margin:8px 0 0}
+
+/* ---------- 3D ---------- */
+#tdCanvasWrap{position:relative;min-height:320px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--surface2)}
+#tdMsg{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:20px;color:var(--muted);font-size:.9rem}
+
+/* ---------- report ---------- */
+.report{display:none}
+.report.on{display:block}
+.a4{background:var(--rep-bg);color:var(--rep-fg);width:100%;max-width:210mm;margin:0 auto;padding:12mm;
+  box-shadow:0 3px 18px rgba(0,0,0,.18);border-radius:2px;font:11px/1.45 var(--sans)}
+.a4 h1{font-size:16px;margin:0 0 2px;color:var(--rep-head)}
+.a4 h2{font-size:9px;color:var(--rep-muted);margin:10px 0 4px;letter-spacing:.1em}
+.a4 table{width:100%;font-size:9.5px;border-collapse:collapse;margin:2px 0 4px}
+.a4 th,.a4 td{border:1px solid var(--rep-line);padding:2px 5px;text-align:left;color:var(--rep-fg);background:none}
+.a4 th{background:var(--rep-th);font-weight:500;width:38%}
+.a4 .rep-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--rep-accent);padding-bottom:4px;margin-bottom:6px;gap:10px}
+.a4 .rep-sub{font-size:9px;color:var(--rep-muted)}
+.a4 .rep-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.a4 img{width:100%;display:block;border:1px solid var(--rep-line)}
+.a4 .method{font-size:8.6px;color:var(--rep-muted);line-height:1.4;margin-top:6px}
+.a4 .sbar{height:12px;margin-bottom:4px}
+.a4 .mix{font-size:9px;color:var(--rep-fg)}
+.a4 .bignum{font:600 20px var(--mono);color:var(--rep-head)}
+#reportImgWrap{max-width:520px}
+
+@media print{
+  @page{size:A4;margin:12mm}
+  :root, :root[data-theme="dark"], :root[data-theme="blue"], :root:not([data-theme="light"]){
+    --rep-bg:#ffffff; --rep-fg:#14251b; --rep-head:#0d3d26; --rep-line:#cbd8cf;
+    --rep-accent:#1c7a4a; --rep-muted:#4b6b58; --rep-th:#eef5f0; --rep-hl:#e7f3ec;
+  }
+  body{background:#fff}
+  .head,.panel,.lamps,.viewbox,.strip,#msg,.noprint{display:none!important}
+  .app{display:block!important;padding:0;margin:0;max-width:none}
+  .stage{display:block}
+  .report{display:block!important}
+  .a4{box-shadow:none;width:auto;max-width:none;padding:0;border-radius:0}
+  .a4 table{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<div class="head">
+  <div class="topbar">
+    <div class="brand">
+      <h1>Kasvuvalguse kalkulaator</h1>
+      <span class="tag">V3.1 · 02.11.2026</span>
+    </div>
+    <div class="topact">
+      <div class="seg" id="themeSeg" role="group" aria-label="Teema">
+        <button type="button" data-t="light">Hele</button>
+        <button type="button" data-t="dark">Roheline</button>
+        <button type="button" data-t="blue">Sinine</button>
+      </div>
+      <button type="button" id="printBtn" class="pri">Prindi / PDF</button>
+    </div>
+  </div>
+  <nav class="steps" id="steps" aria-label="Töövoog">
+    <button type="button" class="stepbtn on" data-step="1"><b>1</b> Ruum</button>
+    <button type="button" class="stepbtn" data-step="2"><b>2</b> Valgustid</button>
+    <button type="button" class="stepbtn" data-step="3"><b>3</b> Arvutus</button>
+    <button type="button" class="stepbtn" data-step="4"><b>4</b> Tulemused</button>
+    <button type="button" class="stepbtn" data-step="5"><b>5</b> Aruanne</button>
+  </nav>
+</div>
+
+<main class="app">
+
+  <!-- ============ LEFT PROPERTY PANEL ============ -->
+  <aside class="panel card">
+
+    <!-- STEP 1 ---------------------------------------------------------- -->
+    <section class="pstep on" data-p="1">
+      <h2>1 · Ruum</h2>
+      <div class="subh">Kasvuala mõõdud</div>
+      <div class="grid3">
+        <label class="f" for="l">Pikkus (cm)<input type="number" id="l" value="1822" min="20" max="3000" step="1" inputmode="decimal"></label>
+        <label class="f" for="w">Laius (cm)<input type="number" id="w" value="88" min="20" max="3000" step="1" inputmode="decimal"></label>
+        <label class="f" for="rh">Kõrgus (cm)<input type="number" id="rh" value="50" min="20" max="600" step="1" inputmode="decimal"></label>
+      </div>
+      <div class="grid2">
+        <label class="f full" for="h">Täpne mõõtekaugus (cm)<input type="number" id="h" value="35" min="5" max="400" step="1" inputmode="decimal">
+          <small class="hint">nt vahemaa valgusti pinnalt taime lehtedeni</small></label>
+        <label class="f" for="step">Mõõteala tihedus (cm)
+          <select id="step"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></label>
+        <label class="f" for="rho">Seinte peegeldus (%)<input type="number" id="rho" value="60" min="0" max="80" step="1" inputmode="decimal"></label>
+        <label class="f" for="mf">Hooldetegur MF<input type="number" id="mf" value="0.9" min="0.5" max="1" step="0.01" inputmode="decimal"></label>
+        <label class="f full" for="hours">Töötunde ööpäevas<input type="number" id="hours" value="16" min="0" max="24" step="0.5" inputmode="decimal">
+          <small class="hint">kasutatakse DLI arvutuses</small></label>
+      </div>
+      <div class="row"><button type="button" id="reset">Lähtesta näidisandmetele</button></div>
+    </section>
+
+    <!-- STEP 2 ---------------------------------------------------------- -->
+    <section class="pstep" data-p="2">
+      <h2>2 · Valgustid</h2>
+      <label class="f" for="preset">Valgusti tüüp
+        <select id="preset"></select>
+      </label>
+      <p class="hint">Tüüpilised hinnangulised väärtused, mitte mõõdetud; täpsuse jaoks laadi tootja IES/LDT fail.</p>
+
+      <div class="grid2" style="margin-top:8px">
+        <label class="f" for="ll">Pikkus (cm)<input type="number" id="ll" value="120" min="1" max="400" step="1" inputmode="decimal"></label>
+        <label class="f" for="lw">Laius (cm)<input type="number" id="lw" value="7" min="1" max="400" step="1" inputmode="decimal"></label>
+        <label class="f" for="pw">Voolutarve (W)<input type="number" id="pw" value="40" min="0" max="3000" step="1" inputmode="decimal">
+          <small class="hint">ainult elektrikulu – valgus ei tuletata vattidest</small></label>
+        <label class="f" for="cct">Värvustemperatuur (K)
+          <select id="cct"><option>2700</option><option>3000</option><option>3500</option><option>4000</option>
+            <option>5000</option><option>5700</option><option>6000</option><option>6500</option><option value="x">muu</option></select></label>
+        <label class="f" for="cri">CRI (Ra)
+          <select id="cri"><option value="70">70</option><option value="80" selected>80</option><option value="90">90</option><option value="95">95+</option></select></label>
+        <label class="f full" id="cctxL" for="cctx" hidden>Muu värvustemperatuur (2200–7000 K)<input type="number" id="cctx" value="3000" min="2200" max="7000" step="50" inputmode="numeric"></label>
+      </div>
+
+      <div class="sub">Valgusvoog</div>
+      <label class="f" for="mode">Valgusvoo määramine
+        <select id="mode">
+          <option value="lm" selected>Valgusvoog (lm) + CCT/Ra</option>
+          <option value="ppf">PPF (µmol/s)</option>
+        </select>
+      </label>
+      <div class="grid2" style="margin-top:8px">
+        <label class="f" id="lmL" for="lm">Valgusvoog (lm)<input type="number" id="lm" value="7600" min="100" max="200000" step="1" inputmode="decimal"></label>
+        <div class="f" id="lmwL"><span>Arvutuslik valgusviljakus</span>
+          <div id="lmwOut" style="font:500 .92rem var(--mono);color:var(--muted);padding:6px 0">= 190 lm/W</div>
+        </div>
+        <label class="f" id="ppfL" for="ppf" hidden>PPF (µmol/s)<input type="number" id="ppf" value="648" min="1" max="100000" step="any" inputmode="decimal"></label>
+      </div>
+
+      <div id="shBox" hidden>
+        <div class="grid2">
+          <label class="f" for="shB">Sinine 400–500 nm (%)<input type="number" id="shB" value="15" min="0" max="100" step="0.1" inputmode="decimal"></label>
+          <label class="f" for="shG">Roheline 500–600 nm (%)<input type="number" id="shG" value="20" min="0" max="100" step="0.1" inputmode="decimal"></label>
+          <label class="f" for="shR">Punane 600–700 nm (%)<input type="number" id="shR" value="65" min="0" max="100" step="0.1" inputmode="decimal"></label>
+          <label class="f" for="shFR">Kaugpunane 700–750 nm (% PPF-ist)<input type="number" id="shFR" value="8" min="0" max="100" step="0.1" inputmode="decimal"></label>
+        </div>
+        <p class="err" id="shWarn" hidden></p>
+      </div>
+
+      <div class="sub">Valgusjaotus</div>
+      <div class="grid2">
+        <label class="f" for="beamC0">Poolväärtusnurk C0 piki telge (°)<input type="number" id="beamC0" value="175" min="10" max="179" step="1" inputmode="decimal"></label>
+        <label class="f" for="beamC90">Poolväärtusnurk C90 risti telge (°)<input type="number" id="beamC90" value="120" min="10" max="179" step="1" inputmode="decimal"></label>
+      </div>
+      <p class="hint" id="beamHint">C0 = piki valgusti pikkust, C90 = risti. IES/LDT faili korral tuleb jaotus failist.</p>
+      <p class="hint">Poolväärtusnurk = nurk, kus valgustugevus on langenud 50 %-le. Katteta LED-kiibil öeldakse 120°, aga tugev põhivalgus on ~90–100°; kerge matt kate laiendab jaotust. Tüüpväärtused, kontrolli tootja C0/C90 kõverat või laadi IES/LDT.</p>
+
+      <div class="sub">Paigutus</div>
+      <label class="f" for="ori">Valgusti pikkuse suund
+        <select id="ori"><option value="x">Piki x-telge</option><option value="y" selected>Piki y-telge</option></select></label>
+      <div class="seg" role="radiogroup" aria-label="Paigutuse viis" style="margin-top:8px">
+        <label><input type="radio" name="place" id="pAuto" value="auto" checked>Automaatne</label>
+        <label><input type="radio" name="place" id="pMan" value="manual">Käsitsi</label>
+      </div>
+      <div class="grid2" id="autoBox" style="margin-top:8px">
+        <label class="f" for="rows">Ridu<input type="number" id="rows" value="1" min="1" max="20" step="1" inputmode="numeric"></label>
+        <label class="f" for="cols">Veerge<input type="number" id="cols" value="4" min="1" max="20" step="1" inputmode="numeric"></label>
+      </div>
+
+      <div class="sub">Fotomeetriline fail</div>
+      <label class="f" for="iesf">Laadi IES-fail (LM-63) või LDT<input type="file" id="iesf" accept=".ies,.IES,.ldt,.LDT,.txt"></label>
+      <small class="hint">IES: ainult TILT=NONE, fotomeetria tüüp C. Toetatud ka EULUMDAT (.ldt).</small>
+      <div id="iesInfo" hidden style="white-space:pre-line;font:.72rem/1.45 var(--mono);color:var(--muted);background:var(--surface2);border:1px solid var(--line);border-radius:5px;padding:7px 9px;margin-top:8px;overflow-wrap:anywhere"></div>
+      <p class="err" id="iesErr" hidden></p>
+      <div class="row"><button type="button" id="iesx" hidden>Eemalda IES</button></div>
+    </section>
+
+    <!-- STEP 3 ---------------------------------------------------------- -->
+    <section class="pstep" data-p="3">
+      <h2>3 · Arvutus</h2>
+      <div id="calcInfo" style="display:grid;gap:8px"></div>
+      <div class="row"><button type="button" class="pri" id="calcBtn">Arvuta uuesti</button></div>
+      <p class="hint">Arvutus käivitub automaatselt iga sisendi muutmisel (viide ~150 ms).</p>
+      <div class="sub">Mudel</div>
+      <p class="hint">Punktvalgusallikate summa. Valgusti jaotub kuni 3 alikaks piki pikkust (≥ 60 cm). Jaotus I(θ,C) = I₀·cos<sup>m(C)</sup>θ, m(C) = m<sub>C0</sub>cos²C + m<sub>C90</sub>sin²C või IES/LDT tabel. I₀ normaliseeritakse numbriliselt poolkeral (90 × 36 sammu), et kiirgusvoog = PPF.</p>
+    </section>
+
+    <!-- STEP 4 ---------------------------------------------------------- -->
+    <section class="pstep" data-p="4">
+      <h2>4 · Tulemused</h2>
+      <div class="stats" id="stats"></div>
+      <div class="row">
+        <button type="button" id="copy">Kopeeri CSV</button>
+        <button type="button" id="csvDl">Laadi CSV alla</button>
+        <button type="button" id="pngDl">Laadi PNG alla</button>
+      </div>
+      <p class="note" id="tblH">Väärtuste tabel</p>
+      <div class="scroll" id="tbl" style="max-height:340px;overflow:auto"></div>
+      <textarea class="noprint" id="csvbuf" style="position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0" tabindex="-1" aria-hidden="true"></textarea>
+    </section>
+
+    <!-- STEP 5 ---------------------------------------------------------- -->
+    <section class="pstep" data-p="5">
+      <h2>5 · Aruanne</h2>
+      <div class="grid2">
+        <label class="f full" for="rpProjekt">Projekt<input type="text" id="rpProjekt" value="Kasvuvalguse prooviarvutus"></label>
+        <label class="f full" for="rpKlient">Klient<input type="text" id="rpKlient" value="—"></label>
+        <label class="f" for="rpKuupaev">Kuupäev<input type="date" id="rpKuupaev"></label>
+        <label class="f" for="rpAutor">Autor<input type="text" id="rpAutor" value="—"></label>
+      </div>
+      <div class="row"><button type="button" class="pri" id="printBtn2">Prindi / PDF</button></div>
+      <p class="hint">Aruanne kuvatakse A4 lehe suuruses. Trükkimisel peidetakse kõik muu.</p>
+    </section>
+
+  </aside>
+
+  <!-- ============ CENTRE VIEWPORT ============ -->
+  <section class="stage">
+    <p class="err" id="msg" role="status" hidden></p>
+
+    <div class="card viewbox" id="viewbox">
+      <div class="viewtabs" id="viewTabs">
+        <button type="button" class="viewtab" data-view="2d">2D plaan</button>
+        <button type="button" class="viewtab" data-view="map">Värvikaart</button>
+        <button type="button" class="viewtab on" data-view="3d">3D</button>
+        <span class="spacer"></span>
+        <label class="chk" for="underlay"><input type="checkbox" id="underlay">Kuumakaart taustaks</label>
+      </div>
+
+      <div id="view2d">
+        <div class="canvaswrap" id="planwrap"><canvas id="plan" role="img" aria-label="Kasvuala plaan"></canvas></div>
+        <p class="note" id="planNote">Lohista valgustit hiirega, et paigutada käsitsi. Nool näitab valgusti pikkuse suunda.</p>
+      </div>
+
+      <div id="viewmap" hidden>
+        <div class="viewtabs" style="margin-bottom:8px">
+          <label class="f" for="mapQ" style="max-width:230px">Kuvatav suurus
+            <select id="mapQ">
+              <option value="tot">PPFD kokku 400–700 nm</option>
+              <option value="b">Sinine 400–500 nm</option>
+              <option value="g">Roheline 500–600 nm</option>
+              <option value="r">Punane 600–700 nm</option>
+              <option value="lux">Luks</option>
+            </select>
+          </label>
+          <label class="chk" for="nums"><input type="checkbox" id="nums" checked>Näita numbreid</label>
+          <label class="chk" for="smooth"><input type="checkbox" id="smooth" checked>Sujuv kaart</label>
+        </div>
+        <div class="canvaswrap" id="mapwrap"><canvas id="map" role="img" aria-label="Valgusjaotuse kaart"></canvas></div>
+        <div class="canvaswrap"><canvas id="legend"></canvas></div>
+        <div id="hover">Vii kursor või puuduta kaarti, et näha täpset väärtust.</div>
+        <p class="note" id="mapNote"></p>
+      </div>
+
+      <div id="view3d" hidden>
+        <div id="tdCanvasWrap"><div id="tdMsg">3D vaade laeb…</div></div>
+        <p class="note">Lohista pööramiseks, rulliga suumi, Shift+lohistus või parem nupp = nihutamine.</p>
+      </div>
+    </div>
+
+    <div class="strip" id="strip"></div>
+
+    <!-- ============ REPORT (step 5) ============ -->
+    <section class="report" id="report">
+      <div class="a4" id="a4">
+        <div class="rep-head">
+          <div>
+            <h1>Kasvuvalguse arvutusaruanne</h1>
+            <div class="rep-sub">Kasvuvalguse kalkulaator V3.1 · punktvalgusallikate mudel</div>
+          </div>
+          <div class="rep-sub" id="repMeta"></div>
+        </div>
+        <div id="repBody"></div>
+      </div>
+    </section>
+  </section>
+
+  <!-- ============ LUMINAIRE LIST ============ -->
+  <aside class="lamps card">
+    <h2>Valgustite loend</h2>
+    <div class="scroll" style="max-height:440px">
+      <table id="lampTable">
+        <thead><tr><th>nr</th><th>x (cm)</th><th>y (cm)</th><th>tüüp</th><th title="Valgusvoog, lm">lm</th><th title="PPF, µmol/s">PPF</th><th title="Voolutarve, W">W</th><th>suund</th><th></th></tr></thead>
+        <tbody id="lampBody"></tbody>
+      </table>
+    </div>
+    <div class="row">
+      <button type="button" id="addLamp" class="mini">+ Lisa</button>
+      <button type="button" id="delLamp" class="mini">Kustuta viimane</button>
+    </div>
+    <p class="note" id="lampNote"></p>
+  </aside>
+
+</main>
+
+<script>
+'use strict';
+/* =====================================================================
+   Kasvuvalguse kalkulaator V3.1
+   Grow-light PPFD calculator: point sources + wall mirrors, C0/C90 or IES.
+   Light output is given in lm / PPF / µmol/J × W – never derived from watts.
+   ===================================================================== */
+
+const $ = id => document.getElementById(id);
+const $$ = s => Array.prototype.slice.call(document.querySelectorAll(s));
+
+const VIR = [[68,1,84],[72,40,120],[62,74,137],[49,104,142],[38,130,142],[31,158,137],[53,183,121],[109,205,89],[180,222,44],[253,231,37]];
+
+/* product presets: W/lm/cm/beam for T8 tubes from Sharplumi Sept 2026 tube list (G13, 120 deg); tri-proof W/lm/mm from Aug 2026 list, tri-proof beam = estimate (no IES) */
+const PRESETS = [
+  {id:'tp_120_6k', name:'36W Tri-Proof 6000K 190Lm/W (123cm)',   len:123, wid:7,   watts:36, lm:6840, cct:6000, cri:80, b0:175, b90:120, mode:'lm'},
+  {id:'tp_150',    name:'50W Tri-Proof 6000K 190Lm/W (157cm)',   len:157, wid:7,   watts:50, lm:9500, cct:6000, cri:80, b0:175, b90:120, mode:'lm'},
+  {id:'tp_60',     name:'18W Tri-Proof 6000K 155Lm/W (63cm)',    len:63,  wid:7,   watts:18, lm:2790, cct:6000, cri:80, b0:160, b90:120, mode:'lm'},
+  {id:'t8_150',    name:'25W T8 LED toru 3000K 140Lm/W (150cm)', len:150, wid:2.8, watts:25, lm:3500, cct:3000, cri:80, b0:120, b90:120, mode:'lm'},
+  {id:'t8_150_6k', name:'25W T8 LED toru 6000K 200Lm/W (150cm)', len:150, wid:2.8, watts:25, lm:5000, cct:6000, cri:80, b0:120, b90:120, mode:'lm'},
+  {id:'t8_120',    name:'18W T8 LED toru 3000K 140Lm/W (120cm)', len:120, wid:2.8, watts:18, lm:2520, cct:3000, cri:80, b0:120, b90:120, mode:'lm'},
+  {id:'t8_60',     name:'9W T8 LED toru 3000K 140Lm/W (60cm)',   len:60,  wid:2.8, watts:9,  lm:1260, cct:3000, cri:80, b0:120, b90:120, mode:'lm'},
+  {id:'free',      name:'Vabalt määratud',                       len:60,  wid:30,  watts:100,lm:17000, cct:3500, cri:80, b0:120, b90:120, mode:'lm'}
+];
+
+/* target ranges for herbs & crops grown in Estonia (literature typical values) */
+const TARGETS = [
+  {name:'Seemikud ja pistikud',             ppfd:[100,250],  dli:[6,12]},
+  {name:'Rukola, salat',                    ppfd:[150,300],  dli:[8,14]},
+  {name:'Till',                             ppfd:[150,300],  dli:[8,14]},
+  {name:'Petersell',                        ppfd:[150,300],  dli:[8,14]},
+  {name:'Koriander',                        ppfd:[150,300],  dli:[8,12]},
+  {name:'Münt, meliss',                     ppfd:[150,300],  dli:[8,14]},
+  {name:'Murulauk',                         ppfd:[150,250],  dli:[8,12]},
+  {name:'Basiilik',                         ppfd:[200,400],  dli:[12,20]},
+  {name:'Tüümian, rosmariin, salvei, pune', ppfd:[250,400],  dli:[12,20]},
+  {name:'Tomat, paprika, kurk',             ppfd:[400,700],  dli:[15,25]},
+  {name:'Kanep – vegetatiivne',             ppfd:[400,600],  dli:[20,30]},
+  {name:'Kanep – õitsemine',                ppfd:[600,1000], dli:[30,45]}
+];
+
+const state = {
+  step: 1, view: '3d', layout: 'auto',
+  lamps: [], ies: null, scene: null, result: null, calcMs: 0,
+  mapQ: 'tot'
+};
+
+/* ---------------- formatting helpers ---------------- */
+const fmt = (n, d = 0) => (isFinite(n) ? n : 0).toFixed(d).replace('.', ',');
+const fmtI = n => String(Math.round(isFinite(n) ? n : 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+const nf = x => fmt(x, Math.abs(x) < 10 ? 1 : 0);
+const cssVar = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const rgb = c => 'rgb(' + c.join(',') + ')';
+
+function viridis(t) {
+  t = Math.min(1, Math.max(0, t));
+  const pos = t * (VIR.length - 1), i = Math.min(VIR.length - 2, Math.floor(pos)), f = pos - i;
+  return VIR[i].map((c, k) => Math.round(c + (VIR[i + 1][k] - c) * f));
+}
+function luminance(c) {
+  const l = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  return 0.2126 * l(c[0]) + 0.7152 * l(c[1]) + 0.0722 * l(c[2]);
+}
+
+/** offscreen 1 px = 1 grid point colour field; drawn scaled (bilinear) by the painter */
+function heatCanvas(r) {
+  const cv = document.createElement('canvas');
+  cv.width = r.nx; cv.height = r.ny;
+  const ctx = cv.getContext('2d');
+  const img = ctx.createImageData(r.nx, r.ny);
+  const lo = r.min, span = Math.max(r.max - r.min, 1e-9);
+  for (let j = 0; j < r.ny; j++) {
+    for (let i = 0; i < r.nx; i++) {
+      const c = viridis((r.grid[j][i] - lo) / span);
+      const o = (j * r.nx + i) * 4;
+      img.data[o] = c[0]; img.data[o + 1] = c[1]; img.data[o + 2] = c[2]; img.data[o + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return cv;
+}
+
+/* ---------------- spectrum model (white LED) ---------------- */
+// [CCT, µmol/s/lm, blue %, green %, red %, far-red %]
+const CCT_TABLE = [
+  [2700,.0152,9,39,52,3],[3000,.0148,11,41,48,3],[3500,.0145,13,42,45,2.5],[4000,.0142,16,43,41,2.5],
+  [5000,.0138,20,44,36,2],[5700,.0136,22,44,34,2],[6500,.0134,25,44,31,2]
+];
+const CRI_ADJ = {70:[.96,-4,4,0,0], 80:[1,0,0,0,0], 90:[1.06,4,-3,-1,2], 95:[1.10,6,-5,-1,4]};
+
+function whiteSpectrum(cct, cri) {
+  let i = 0;
+  while (i < CCT_TABLE.length - 2 && cct > CCT_TABLE[i + 1][0]) i++;
+  const a = CCT_TABLE[i], b = CCT_TABLE[i + 1];
+  const t = Math.min(Math.max((cct - a[0]) / (b[0] - a[0]), 0), 1);
+  const v = [1, 2, 3, 4, 5].map(k => a[k] + (b[k] - a[k]) * t);
+  const c = CRI_ADJ[cri] || CRI_ADJ[80];
+  const f = Math.min(v[0], .016) * c[0];
+  const B = Math.max(0, v[1] + c[3]), G = Math.max(0, v[2] + c[2]);
+  const R = Math.max(0, Math.min(v[3], 58) + c[1]), S = B + G + R || 1;
+  return { f, b: B / S, g: G / S, r: R / S, fr: Math.max(0, v[4] + c[4]) / 100 };
+}
+
+/* ---------------- grid axis ---------------- */
+function axis(len, step) {
+  const a = [];
+  for (let v = 0; v <= len + 1e-9; v += step) a.push(Math.round(v * 1e6) / 1e6);
+  if (len - a[a.length - 1] > 1e-6) a.push(len);
+  return a;
+}
+
+/* =====================================================================
+   IES LM-63 / EULUMDAT parsing
+   ===================================================================== */
+function parseIES(txt) {
+  const L = txt.replace(/\r/g, '').split('\n'), kw = {};
+  let i = 0, last = '', tilt = null;
+  for (; i < L.length; i++) {
+    const t = L[i].trim();
+    if (/^TILT\s*=/i.test(t)) { tilt = t.split('=')[1].trim().toUpperCase(); i++; break; }
+    const m = t.match(/^\[(\w+)\]\s*(.*)$/);
+    if (!m) continue;
+    const key = m[1].toUpperCase();
+    if (key !== 'MORE') last = key;
+    if (last) kw[last] = ((kw[last] || '') + ' ' + m[2]).trim();
+  }
+  if (tilt === null) throw new Error('TILT= rida puudub – ei ole LM-63 fail');
+  if (tilt !== 'NONE') throw new Error('TILT=' + tilt + ' ei ole toetatud (ainult TILT=NONE)');
+  const t = L.slice(i).join(' ').split(/[\s,]+/).filter(Boolean).map(Number);
+  if (t.length < 13 || t.some(isNaN)) throw new Error('fail on vigane või poolik');
+  const [nl, lpl, mult, nv, nh, typ, unit, wd, ln, , bf, bpf, watts] = t;
+  if (typ !== 1) throw new Error('toetatud on ainult fotomeetria tüüp C (1), failis on ' + typ);
+  if (!(nv >= 1 && nh >= 1) || t.length < 13 + nv + nh + nv * nh) throw new Error('nurkade arv ei klapi, fail on poolik');
+  const V = t.slice(13, 13 + nv), H = t.slice(13 + nv, 13 + nv + nh), o = 13 + nv + nh;
+  const k = (mult > 0 ? mult : 1) * (bf > 0 ? bf : 1) * (bpf > 0 ? bpf : 1);
+  const u = unit === 1 ? 30.48 : 100;
+  const cd = H.map((_, j) => t.slice(o + j * nv, o + (j + 1) * nv).map(x => x * k));
+  return { kind: 'IES', info: kw, V, H, cd, watts: watts > 0 ? watts : 0,
+    lenCm: Math.abs(ln) * u, widCm: Math.abs(wd) * u, declared: lpl > 0 ? nl * lpl : 0, factor: k };
+}
+
+function parseLDT(txt) {
+  const L = txt.replace(/\r/g, '').split('\n').map(s => s.trim());
+  const nn = i => parseFloat((L[i] || '').replace(',', '.'));
+  const isym = nn(2), mc = nn(3), dc = nn(4), ng = nn(5), ns = nn(25);
+  if (![isym, mc, ng, ns].every(isFinite) || isym < 0 || isym > 4 || mc < 1 || ng < 1)
+    throw new Error('EULUMDAT päis on vigane');
+  let flux = 0, watts = 0;
+  for (let s = 0; s < ns; s++) { flux += nn(28 + 6 * s) || 0; watts += nn(31 + 6 * s) || 0; }
+  if (!(flux > 0)) throw new Error('EULUMDAT: lampide valgusvoog puudub');
+  const rest = L.slice(26 + 6 * ns + 10).join(' ').split(/\s+/).filter(Boolean)
+    .map(x => parseFloat(x.replace(',', '.')));
+  const np = Math.round([mc, 1, mc / 2 + 1, mc / 2 + 1, mc / 4 + 1][isym]), N = np * ng;
+  if (rest.length < N + ng || rest.some(isNaN)) throw new Error('EULUMDAT fail on poolik');
+  const k = flux / 1000 * (nn(23) > 0 ? nn(23) : 1), stepC = dc > 0 ? dc : 360 / mc;
+  const H = isym === 1 ? [0] : Array.from({ length: np }, (_, j) => (isym === 3 ? 90 : 0) + j * stepC);
+  const V = rest.slice(rest.length - N - ng, rest.length - N), I = rest.slice(rest.length - N);
+  const cd = H.map((_, j) => I.slice(j * ng, (j + 1) * ng).map(x => x * k));
+  if (isym === 0) { H.push(360); cd.push(cd[0]); }
+  const d = i => Math.abs(nn(i)) / 10 || 0;
+  const len = d(15) || d(12);
+  return { kind: 'LDT', info: { MANUFAC: L[0], LUMINAIRE: L[8], LUMCAT: L[9] }, V, H, cd, watts,
+    lenCm: len, widCm: d(16) || d(13) || len, declared: flux, factor: k };
+}
+
+/* candela table -> uniform γ(0.5°) × C(2°) grid + total flux */
+function buildIES(P) {
+  const { V, H, cd } = P, nV = V.length, nH = H.length, h0 = H[0], h1 = H[nH - 1], rad = Math.PI / 180;
+  const seg = (a, x) => {
+    const n = a.length;
+    if (n < 2 || x <= a[0]) return [0, 0];
+    if (x >= a[n - 1]) return [n - 2, 1];
+    let i = 0; while (a[i + 1] < x) i++;
+    return [i, (x - a[i]) / (a[i + 1] - a[i])];
+  };
+  const fold = C => {
+    C = ((C % 360) + 360) % 360;
+    if (nH < 2) return 0;
+    if (h1 <= 90 + 1e-6) { if (C > 180) C = 360 - C; if (C > 90) C = 180 - C; }
+    else if (h1 <= 180 + 1e-6) { if (C > 180) C = 360 - C; }
+    else if (h0 >= 90 - 1e-6 && h1 <= 270 + 1e-6 && (C < h0 || C > h1)) C = (((180 - C) % 360) + 360) % 360;
+    return C;
+  };
+  const at = (j, i) => cd[j][Math.min(i, nV - 1)];
+  const f = (g, C) => {
+    if (g > V[nV - 1] + 1e-9 || g < V[0] - 1e-9) return 0;
+    const [i, t] = seg(V, g), [j, s] = seg(H, fold(C)), j2 = Math.min(j + 1, nH - 1);
+    const row = jj => at(jj, i) * (1 - t) + at(jj, i + 1) * t;
+    return row(j) * (1 - s) + row(j2) * s;
+  };
+  let phi = 0;
+  for (let g = .25; g < 180; g += .5) {
+    let s = 0;
+    for (let c = 1; c < 360; c += 2) s += f(g, c);
+    phi += s * Math.sin(g * rad);
+  }
+  phi *= (.5 * rad) * (2 * rad);
+  const T = new Float64Array(181 * 181);
+  for (let gi = 0; gi < 181; gi++)
+    for (let ci = 0; ci < 181; ci++) T[gi * 181 + ci] = f(gi / 2, ci * 2);
+  return Object.assign({ T, phi }, P);
+}
+
+/* =====================================================================
+   Photometric core
+   ===================================================================== */
+const normCache = new Map();
+
+/** m exponent from a full beam angle (deg) */
+function beamToM(deg) {
+  const half = Math.min(Math.max(deg, 10), 179) / 2 * Math.PI / 180;
+  const c = Math.cos(half);
+  if (c <= 1e-4) return 0.05;
+  return Math.log(0.5) / Math.log(c);
+}
+
+/** hemisphere normalisation ∫∫ cos^m(C)θ sinθ dθ dC, cached per beam pair */
+function cosNorm(beamC0, beamC90) {
+  const m0 = beamToM(beamC0), m90 = beamToM(beamC90);
+  const key = m0.toFixed(4) + '|' + m90.toFixed(4);
+  const hit = normCache.get(key);
+  if (hit !== undefined) return hit;
+  const NG = 90, NC = 36, dT = (Math.PI / 2) / NG, dC = 2 * Math.PI / NC;
+  let s = 0;
+  for (let i = 0; i < NG; i++) {
+    const th = (i + 0.5) * dT, st = Math.sin(th), ct = Math.cos(th);
+    for (let j = 0; j < NC; j++) {
+      const C = (j + 0.5) * dC, c2 = Math.cos(C) * Math.cos(C);
+      s += Math.pow(ct, m90 + (m0 - m90) * c2) * st * dC;
+    }
+  }
+  const v = s * dT;
+  normCache.set(key, v);
+  return v;
+}
+
+/** evenly spaced luminaires (cell centres) */
+function autoLamps(W, L, rows, cols) {
+  const a = [];
+  for (let r = 0; r < rows; r++)
+    for (let c = 0; c < cols; c++)
+      a.push({
+        x: Math.round((c + 0.5) * W / cols * 10) / 10,
+        y: Math.round((r + 0.5) * L / rows * 10) / 10,
+        rot: 0
+      });
+  return a;
+}
+
+/**
+ * Compute the PPFD field.
+ * sc = {W,L,h,step,rho,mf,hours,ori,lamps[{x,y,rot}],fix{ppf,len,beamC0,beamC90,ies}}
+ */
+function computeField(sc) {
+  const W = sc.W, L = sc.L, h = sc.h, mf = sc.mf, rho = sc.rho, fix = sc.fix, IES = fix.ies;
+
+  // grid with a hard 20 000 point cap
+  let sp = sc.step, xs = axis(W, sp), ys = axis(L, sp), raised = false;
+  while (xs.length * ys.length > 20000) {
+    sp += 5; xs = axis(W, sp); ys = axis(L, sp); raised = true;
+  }
+  const nx = xs.length, ny = ys.length, npts = nx * ny;
+
+  // source decomposition
+  let nSub = fix.len >= 60 ? 3 : 1;
+  let corners = rho > 0;
+  const estimate = () => sc.lamps.length * nSub * (corners ? 9 : 1) * npts;
+  if (estimate() > 4.5e6) corners = false;
+  if (estimate() > 4.5e6 && nSub === 3) nSub = 1;
+  const offs = nSub === 3 ? [-fix.len / 3, 0, fix.len / 3] : [0];
+  const shareBase = 1 / nSub;
+
+  const Ibase = fix.ppf / (IES ? IES.phi : cosNorm(fix.beamC0, fix.beamC90));
+  const mA = beamToM(fix.beamC0), mB = beamToM(fix.beamC90);
+
+  const SX = [], SY = [], SCA = [], SSA = [], SANG = [], SW = [];
+  const addSrc = (x, y, ang, w) => {
+    SX.push(x); SY.push(y);
+    SCA.push(Math.cos(ang)); SSA.push(Math.sin(ang)); SANG.push(ang);
+    SW.push(w * Ibase);
+  };
+  for (let li = 0; li < sc.lamps.length; li++) {
+    const lamp = sc.lamps[li];
+    const base = (sc.ori === 'x' ? 0 : Math.PI / 2) + (lamp.rot ? Math.PI / 2 : 0);
+    const ca = Math.cos(base), sa = Math.sin(base);
+    for (let oi = 0; oi < offs.length; oi++) {
+      const px = lamp.x + ca * offs[oi], py = lamp.y + sa * offs[oi];
+      const sh = shareBase;
+      addSrc(px, py, base, sh);
+      if (rho > 0) {
+        addSrc(-px, py, Math.PI - base, sh * rho);
+        addSrc(2 * W - px, py, Math.PI - base, sh * rho);
+        addSrc(px, -py, -base, sh * rho);
+        addSrc(px, 2 * L - py, -base, sh * rho);
+        if (corners) {
+          const r2 = sh * rho * rho;
+          addSrc(-px, -py, Math.PI + base, r2);
+          addSrc(2 * W - px, -py, Math.PI + base, r2);
+          addSrc(-px, 2 * L - py, Math.PI + base, r2);
+          addSrc(2 * W - px, 2 * L - py, Math.PI + base, r2);
+        }
+      }
+    }
+  }
+
+  const ns = SX.length, H2 = h * h;
+  const grid = [];
+  let sum = 0, mn = Infinity, mx = -Infinity;
+
+  for (let j = 0; j < ny; j++) {
+    const py = ys[j], row = new Array(nx);
+    for (let i = 0; i < nx; i++) {
+      const px = xs[i];
+      let E = 0;
+      for (let k = 0; k < ns; k++) {
+        const dx = px - SX[k], dy = py - SY[k];
+        const d2h = dx * dx + dy * dy;
+        const d2 = d2h + H2;
+        const inv = 1 / Math.sqrt(d2);
+        const cosT = h * inv;
+        let Irel;
+        if (IES) {
+          const T = IES.T;
+          let C = (Math.atan2(dy, dx) - SANG[k]) * 57.29577951308232;
+          C = ((C % 360) + 360) % 360;
+          const gd = Math.min(Math.acos(cosT) * 114.59155902616465, 179.999);
+          const gi = gd | 0, gf = gd - gi;
+          const cc = Math.min(C / 2, 179.999), ci = cc | 0, cf = cc - ci;
+          const o = gi * 181 + ci;
+          const t00 = T[o], t01 = T[o + 1], t10 = T[o + 181], t11 = T[o + 182];
+          Irel = (t00 * (1 - cf) + t01 * cf) * (1 - gf) + (t10 * (1 - cf) + t11 * cf) * gf;
+        } else {
+          const proj = dx * SCA[k] + dy * SSA[k];
+          const c2 = d2h > 1e-9 ? (proj * proj) / d2h : 1;
+          Irel = Math.pow(cosT, mB + (mA - mB) * c2);
+        }
+        E += SW[k] * Irel * cosT * inv * inv * 1e4;
+      }
+      E *= mf;
+      row[i] = E;
+      sum += E;
+      if (E < mn) mn = E;
+      if (E > mx) mx = E;
+    }
+    grid.push(row);
+  }
+
+  const avg = sum / npts;
+  const totalPPF = sc.lamps.length * fix.ppf;
+  return {
+    xs, ys, grid, nx, ny, npts, sp, raised,
+    avg, min: mn, max: mx,
+    u1: avg ? mn / avg : 0, u2: mx ? mn / mx : 0,
+    dli: avg * sc.hours * 3600 / 1e6,
+    frac: totalPPF > 0 ? avg * (W / 100) * (L / 100) / (totalPPF * mf) : 0,
+    totalPPF, totalW: sc.lamps.length * fix.watts,
+    reduced: raised || !corners || nSub !== (fix.len >= 60 ? 3 : 1)
+  };
+}
+
+/* =====================================================================
+   Parameter reading
+   ===================================================================== */
+function readScene() {
+  const errs = [];
+  const num = (id, name, min, max) => {
+    const el = $(id);
+    const v = el ? el.valueAsNumber : NaN;
+    if (!isFinite(v)) { errs.push(name + ' puudub'); return (min + max) / 2; }
+    if (v < min || v > max) { errs.push(name + ' peab olema ' + min + '–' + max); return Math.min(max, Math.max(min, v)); }
+    return v;
+  };
+
+  /* room */
+  const W = num('w', 'Laius', 20, 3000);
+  const L = num('l', 'Pikkus', 20, 3000);
+  const roomH = num('rh', 'Kõrgus', 20, 600);
+  const mount = num('h', 'Täpne mõõtekaugus', 5, 400);
+  const plane = 0; // mõõtepind = taimede lehed (üks väli alates 03.11)
+  const h = Math.max(1, mount - plane);
+  const step = +$('step').value || 10;
+  const rho = num('rho', 'Seinte peegeldus', 0, 80) / 100;
+  const mf = num('mf', 'Hooldetegur', 0.5, 1);
+  const hours = num('hours', 'Töötunnid', 0, 24);
+
+  /* luminaire */
+  const len = num('ll', 'Valgusti pikkus', 1, 400);
+  const wid = num('lw', 'Valgusti laius', 1, 400);
+  const watts = num('pw', 'Voolutarve', 0, 3000);
+  const mode = $('mode').value;
+  const cctRaw = $('cct').value;
+  const cct = cctRaw === 'x' ? num('cctx', 'Värvustemperatuur', 2200, 7000) : +cctRaw;
+  const cri = +$('cri').value;
+  const IES = state.ies;
+  const sp = whiteSpectrum(cct, cri);
+
+  let sh, ppf, lm = null, f = null;
+  if (mode === 'lm') {
+    /* light output given directly in lumens – never derived from watts */
+    sh = { b: sp.b, g: sp.g, r: sp.r, fr: sp.fr };
+    f = sp.f;
+    lm = num('lm', 'Valgusvoog', 100, 200000);
+    ppf = lm * f;
+  } else {
+    let b = num('shB', 'Sinine osakaal', 0, 100);
+    let g = num('shG', 'Roheline osakaal', 0, 100);
+    let r = num('shR', 'Punane osakaal', 0, 100);
+    const fr = num('shFR', 'Kaugpunane osakaal', 0, 100);
+    let tot = b + g + r;
+    $('shWarn').hidden = Math.abs(tot - 100) <= 0.05;
+    if (Math.abs(tot - 100) > 0.05) $('shWarn').textContent = 'Sinine + roheline + punane = ' + fmt(tot, 1) + ' %, peaksi olema 100 %. Osakaalud normeeritakse.';
+    if (tot <= 0) { errs.push('spektri osakaalud on nullid'); b = 15; g = 20; r = 65; tot = 100; }
+    sh = { b: b / tot, g: g / tot, r: r / tot, fr: fr / 100 };
+    ppf = num('ppf', 'PPF', 1, 100000);
+  }
+  const lmw = (lm != null && watts > 0) ? lm / watts : null;
+
+  /* beams */
+  const beamC0 = IES ? 120 : num('beamC0', 'Poolväärtusnurk C0', 10, 179);
+  const beamC90 = IES ? 120 : num('beamC90', 'Poolväärtusnurk C90', 10, 179);
+
+  /* placement */
+  const rows = Math.round(num('rows', 'Ridu', 1, 20));
+  const cols = Math.round(num('cols', 'Veerge', 1, 20));
+  if (state.layout === 'auto') state.lamps = autoLamps(W, L, rows, cols);
+  if (!state.lamps.length) errs.push('vähemalt üks valgusti');
+  state.lamps.forEach(l => {
+    l.x = Math.min(W, Math.max(0, l.x));
+    l.y = Math.min(L, Math.max(0, l.y));
+  });
+
+  const presetName = $('preset').selectedOptions[0] ? $('preset').selectedOptions[0].textContent : '';
+
+  return {
+    errs,
+    sc: {
+      W, L, roomH, mount, plane, h, step, rho, mf, hours,
+      ori: $('ori').value,
+      rows, cols,
+      lamps: state.lamps.map(l => ({ x: l.x, y: l.y, rot: l.rot || 0 })),
+      fix: { len, wid, watts, lm, lmw, ppf, f, sh, beamC0, beamC90, ies: IES, mode, label: presetName }
+    }
+  };
+}
+
+/* =====================================================================
+   Rendering: strip, stats, guide, spectrum, tables
+   ===================================================================== */
+function qFactor(q) {
+  const sc = state.scene;
+  if (!sc) return 1;
+  const sh = sc.fix.sh;
+  if (q === 'lux') return sc.fix.f ? 1 / sc.fix.f : 0;
+  return q === 'tot' ? 1 : (sh[q] || 0);
+}
+const QNAME = { tot: ['PPFD kokku', 'µmol/m²/s'], b: ['Sinine', 'µmol/m²/s'], g: ['Roheline', 'µmol/m²/s'], r: ['Punane', 'µmol/m²/s'], lux: ['Luks', 'lx'] };
+
+function renderStrip() {
+  const sc = state.scene, r = state.result;
+  if (!sc || !r) return;
+  const w = r.totalW;
+  const items = [
+    ['Ø PPFD', fmt(r.avg), 'µmol/m²/s'],
+    ['Min', fmt(r.min), 'µmol/m²/s'],
+    ['Max', fmt(r.max), 'µmol/m²/s'],
+    ['Ühtlus', fmt(r.u1, 2), 'min ÷ keskmine'],
+    ['DLI', fmt(r.dli, 1), 'mol/m²/päev'],
+    ['Valgusteid', String(sc.lamps.length), 'tk'],
+    ['Kogu-PPF', fmt(r.totalPPF, 0), 'µmol/s'],
+    ['Voolutarve', fmt(w, 0), 'W'],
+    ['Süsteem', w > 0 ? fmt(r.totalPPF / w, 2) : '–', 'µmol/J']
+  ];
+  $('strip').innerHTML = items.map(([k, v, u]) =>
+    '<div class="cell"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="u">' + u + '</div></div>').join('');
+}
+
+function renderStats() {
+  const sc = state.scene, r = state.result;
+  if (!sc || !r) return;
+  const sh = sc.fix.sh, area = sc.W * sc.L / 1e4;
+  const items = [
+    ['Keskmine PPFD', fmt(r.avg), 'µmol/m²/s', ''],
+    ['Minimaalne', fmt(r.min), 'µmol/m²/s', ''],
+    ['Maksimaalne', fmt(r.max), 'µmol/m²/s', ''],
+    ['Ühtlus min/kesk.', fmt(r.u1, 2), 'min ÷ keskmine', ''],
+    ['Ühtlus min/max', fmt(r.u2, 2), 'min ÷ max', ''],
+    ['DLI', fmt(r.dli, 1), 'mol/m²/päev', ''],
+    ['Alale langeb', '~' + fmt(r.frac * 100), '% valgusest', ''],
+    ['Sinine 400–500', nf(r.avg * sh.b), 'µmol/m²/s', 'blue'],
+    ['Roheline 500–600', nf(r.avg * sh.g), 'µmol/m²/s', 'green'],
+    ['Punane 600–700', nf(r.avg * sh.r), 'µmol/m²/s', 'red'],
+    ['Kaugpunane 700–750', nf(r.avg * sh.fr), 'PFD-FR µmol/m²/s', 'farred'],
+    ['Punane : sinine', sh.b > 0 ? fmt(sh.r / sh.b, 2) : '–', 'R : B', ''],
+    ['Valgusteid', String(sc.lamps.length), 'tk kokku', ''],
+    ['Kogu-PPF', fmt(r.totalPPF, 0), 'µmol/s', ''],
+    ['Voolutarve kokku', fmt(r.totalW, 0), 'W', ''],
+    ['Süsteemi efektiivsus', r.totalW > 0 ? fmt(r.totalPPF / r.totalW, 2) : '–', 'µmol/J', ''],
+    ['Võimsustihedus', fmt(r.totalW / area, 0), 'W/m²', '']
+  ];
+  $('stats').innerHTML = items.map(([k, v, u, col]) =>
+    '<div class="stat"' + (col ? ' style="border-left-color:var(--' + col + ')"' : '') +
+    '><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="u">' + u + '</div></div>').join('');
+}
+
+function renderGuide() {
+  const r = state.result;
+  if (!r) return;
+  const avg = r.avg;
+  const maxP = 1000, pos = Math.min(avg, maxP) / maxP * 100;
+  const hits = [];
+  let html = TARGETS.map((t, i) => {
+    const on = avg >= t.ppfd[0] && avg <= t.ppfd[1];
+    if (on) hits.push(i);
+    return '<div class="rng' + (on ? ' on' : '') + '">' +
+      '<span class="nm">' + t.name + '</span>' +
+      '<span class="track"><span class="seg2" style="left:' + (t.ppfd[0] / maxP * 100) + '%;width:' +
+      ((t.ppfd[1] - t.ppfd[0]) / maxP * 100) + '%"></span>' +
+      '<span class="mark" style="left:calc(' + pos + '% - 1px)"></span></span>' +
+      '<span class="vals">' + t.ppfd[0] + '–' + t.ppfd[1] + '</span></div>';
+  }).join('');
+  $('guide').innerHTML = html;
+
+  let rec;
+  if (hits.length) {
+    const names = hits.map(i => TARGETS[i].name);
+    rec = 'Sobib: ' + names.slice(0, 3).join(', ') + (names.length > 3 ? ' …' : '') + '.';
+  } else {
+    let best = 0, bd = Infinity;
+    TARGETS.forEach((t, i) => {
+      const d = avg < t.ppfd[0] ? t.ppfd[0] - avg : (avg > t.ppfd[1] ? avg - t.ppfd[1] : 0);
+      if (d < bd) { bd = d; best = i; }
+    });
+    rec = avg < TARGETS[best].ppfd[0]
+      ? 'Keskmine PPFD on kõigist sihtvahemikest madalam – tõsta valgusteid lähemale, lisa ridu/valgusteid või pikenda fotoperioodi.'
+      : 'Keskmine PPFD ületab kõik sihtvahemikud – tõsta valgusteid kõrgemale või vähenda valgustite arvu/võimsust.';
+  }
+  if (r.u1 < 0.7) rec += ' Ühtlus on madal (' + fmt(r.u1, 2) + ') – vähenda valgustite vahekaugust või tõsta valgusteid kõrgemale.';
+  else if (r.u1 > 0.9) rec += ' Ühtlus on hea (' + fmt(r.u1, 2) + ').';
+  $('recText').textContent = rec;
+  $('chip').textContent = 'Keskmine ' + fmt(avg) + ' µmol/m²/s';
+}
+
+function spectrumMarkup(sc, compact) {
+  const sh = sc.fix.sh, tot = 1 + sh.fr;
+  const seg = [
+    ['Sinine 400–500 nm', sh.b, 'blue', 1],
+    ['Roheline 500–600 nm', sh.g, 'green', 1],
+    ['Punane 600–700 nm', sh.r, 'red', 1],
+    ['Kaugpunane 700–750 nm', sh.fr, 'farred', 0]
+  ];
+  const bar = seg.map(([n, v, c]) => '<span style="width:' + (v / tot * 100) + '%;background:var(--' + c + ')" title="' + n + '"></span>').join('');
+  const leg = seg.map(([n, v, c, pre]) => '<span><i class="dot" style="background:var(--' + c + ')"></i>' + n + ' ' +
+    (pre ? '' : '+') + fmt(v * 100, 1) + ' %</span>').join('');
+  return '<div class="sbar">' + bar + '</div>' + (compact ? '' : '<div class="mix">' + leg + '</div>');
+}
+
+function renderSpectrum() {
+  const sc = state.scene;
+  if (!sc) return;
+  $('specBox').innerHTML = spectrumMarkup(sc, false);
+}
+
+function tableCsv() {
+  const r = state.result;
+  const q = state.mapQ, k = qFactor(q), d = q === 'lux' ? 0 : 1;
+  const lines = ['y\\x;' + r.xs.join(';')];
+  r.grid.forEach((row, j) => {
+    lines.push(r.ys[j] + ';' + row.map(v => (v * k).toFixed(d)).join(';'));
+  });
+  return lines.join('\n');
+}
+
+function renderTable() {
+  const r = state.result;
+  if (!r) return;
+  const q = state.mapQ, k = qFactor(q), d = q === 'lux' ? 0 : 1;
+  $('tblH').textContent = 'Väärtuste tabel: ' + QNAME[q][0] + ' (' + QNAME[q][1] + ')';
+  let h = '<table><thead><tr><th>y \\ x</th>' + r.xs.map(x => '<th>' + x + '</th>').join('') + '</tr></thead><tbody>';
+  r.grid.forEach((row, j) => {
+    h += '<tr><th>' + r.ys[j] + '</th>' + row.map(v => '<td>' + (v * k).toFixed(d) + '</td>').join('') + '</tr>';
+  });
+  $('tbl').innerHTML = h + '</tbody></table>';
+}
+
+function renderCalcInfo() {
+  const sc = state.scene, r = state.result;
+  if (!sc || !r) return;
+  const rows = [
+    ['Võrgu suurus', r.nx + ' × ' + r.ny + ' = ' + fmtI(r.npts) + ' punkti'],
+    ['Mõõteala tihedus', fmt(r.sp, r.sp % 1 ? 1 : 0) + ' cm' + (r.raised ? ' (automaatselt suurendatud)' : '')],
+    ['Valgusteid', sc.lamps.length + ' tk, allikaid kokku ' + (sc.lamps.length * (sc.fix.len >= 60 ? 3 : 1)) + ' + peegeldused'],
+    ['Peegeldused', sc.rho > 0 ? '1. järk + nurgad (2. järk), ρ = ' + fmt(sc.rho * 100) + ' %' : 'väljas (ρ = 0)'],
+    ['Hooldetegur', fmt(sc.mf, 2)],
+    ['Arvutusaeg', fmt(state.calcMs, 0) + ' ms']
+  ];
+  $('calcInfo').innerHTML = rows.map(([k, v]) =>
+    '<div style="display:flex;justify-content:space-between;gap:10px;font-size:.8rem;border-bottom:1px solid var(--line);padding-bottom:4px">' +
+    '<span style="color:var(--muted)">' + k + '</span><span style="font:500 .8rem var(--mono);text-align:right">' + v + '</span></div>').join('');
+}
+
+/* ---------------- luminaire list ---------------- */
+function renderLampTable() {
+  const sc = state.scene;
+  if (!sc) return;
+  const man = state.layout === 'manual';
+  const tb = $('lampBody');
+  const lmTxt = sc.fix.lm != null ? fmt(sc.fix.lm, 0) : '—';
+  const sig = sc.lamps.length + ':' + man + ':' + sc.lamps.map(l => l.rot || 0).join('') + ':' + lmTxt;
+  if (tb.dataset.sig !== sig) {
+    tb.dataset.sig = sig;
+    tb.innerHTML = sc.lamps.map((l, i) =>
+      '<tr>' +
+      '<td>' + (i + 1) + '</td>' +
+      '<td><input type="number" data-i="' + i + '" data-k="x" value="' + fmt(l.x, 0) + '" step="1" ' + (man ? '' : 'disabled') + '></td>' +
+      '<td><input type="number" data-i="' + i + '" data-k="y" value="' + fmt(l.y, 0) + '" step="1" ' + (man ? '' : 'disabled') + '></td>' +
+      '<td style="text-align:left">' + (sc.fix.label || '—') + '</td>' +
+      '<td>' + lmTxt + '</td>' +
+      '<td>' + fmt(sc.fix.ppf, 0) + '</td>' +
+      '<td>' + fmt(sc.fix.watts, 0) + '</td>' +
+      '<td><button type="button" class="mini" data-rot="' + i + '" ' + (man ? '' : 'disabled') + '>' + (l.rot ? '90°' : '0°') + '</button></td>' +
+      '<td><button type="button" class="mini" data-del="' + i + '" ' + (man ? '' : 'disabled') + '>×</button></td>' +
+      '</tr>').join('');
+  } else {
+    Array.prototype.forEach.call(tb.querySelectorAll('input[data-k]'), inp => {
+      if (document.activeElement === inp) return;
+      const i = +inp.dataset.i, k = inp.dataset.k;
+      if (sc.lamps[i]) inp.value = fmt(sc.lamps[i][k], 0);
+    });
+  }
+  $('lampNote').textContent = (man ? 'Käsitsi: ' : 'Automaatne: ') + sc.lamps.length +
+    ' valgustit. Kõigil sama valgusvoog, jaotus ja kõrgus.' + (man ? '' : ' Lohista plaanil või vajuta „Käsitsi“, et muuta.');
+}
+
+/* =====================================================================
+   Canvas helpers
+   ===================================================================== */
+function setupCanvas(cv, w, h) {
+  const dpr = window.devicePixelRatio || 1;
+  cv.style.width = w + 'px'; cv.style.height = h + 'px';
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  const c = cv.getContext('2d');
+  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return c;
+}
+function cellEdges(a, len) {
+  const e = [0];
+  for (let i = 0; i < a.length - 1; i++) e.push((a[i] + a[i + 1]) / 2);
+  e.push(len);
+  return e;
+}
+
+/* =====================================================================
+   2D plan view
+   ===================================================================== */
+let PLAN = null;
+
+function drawPlan() {
+  const sc = state.scene, r = state.result;
+  if (!sc || !r) return;
+  const wrap = $('planwrap');
+  const avail = Math.max(wrap.clientWidth - 2, 260);
+  const ml = 38, mr = 16, mt = 16, mb = 36;
+  const s = Math.min((avail - ml - mr) / sc.W, 540 / sc.L);
+  const cw = ml + sc.W * s + mr, ch = mt + sc.L * s + mb;
+  const cv = $('plan'), c = setupCanvas(cv, cw, ch);
+  const line = cssVar('--line'), muted = cssVar('--muted'), accent = cssVar('--accent'), fg = cssVar('--fg');
+
+  // optional heat underlay
+  if ($('underlay').checked) {
+    const xe = cellEdges(r.xs, sc.W), ye = cellEdges(r.ys, sc.L);
+    const lo = r.min, hi = Math.max(r.max, r.min + 1e-9);
+    r.grid.forEach((row, j) => row.forEach((v, i) => {
+      c.fillStyle = rgb(viridis((v - lo) / (hi - lo)));
+      c.globalAlpha = 0.85;
+      c.fillRect(ml + xe[i] * s, mt + ye[j] * s, (xe[i + 1] - xe[i]) * s + 0.5, (ye[j + 1] - ye[j]) * s + 0.5);
+      c.globalAlpha = 1;
+    }));
+  }
+
+  // grid lines
+  c.strokeStyle = line; c.lineWidth = 1;
+  c.beginPath();
+  for (let x = 0; x <= sc.W + 0.001; x += sc.step) { c.moveTo(ml + x * s, mt); c.lineTo(ml + x * s, mt + sc.L * s); }
+  for (let y = 0; y <= sc.L + 0.001; y += sc.step) { c.moveTo(ml, mt + y * s); c.lineTo(ml + sc.W * s, mt + y * s); }
+  c.globalAlpha = 0.45; c.stroke(); c.globalAlpha = 1;
+
+  // border
+  c.strokeStyle = accent; c.lineWidth = 1.6;
+  c.strokeRect(ml - 0.5, mt - 0.5, sc.W * s + 1, sc.L * s + 1);
+
+  // axes
+  c.fillStyle = muted; c.strokeStyle = muted;
+  c.font = '11px "IBM Plex Mono",monospace';
+  c.textAlign = 'center'; c.textBaseline = 'top';
+  const stepPx = sc.step * s;
+  const kx = Math.max(1, Math.ceil(44 / stepPx));
+  for (let i = 0; i < r.xs.length; i += kx) {
+    const px = ml + r.xs[i] * s;
+    c.beginPath(); c.moveTo(px, mt + sc.L * s); c.lineTo(px, mt + sc.L * s + 4); c.stroke();
+    c.fillText(r.xs[i], px, mt + sc.L * s + 6);
+  }
+  c.textAlign = 'right'; c.textBaseline = 'middle';
+  const ky = Math.max(1, Math.ceil(18 / stepPx));
+  for (let j = 0; j < r.ys.length; j += ky) {
+    const py = mt + r.ys[j] * s;
+    c.beginPath(); c.moveTo(ml - 4, py); c.lineTo(ml, py); c.stroke();
+    c.fillText(r.ys[j], ml - 6, py);
+  }
+  c.textAlign = 'center'; c.textBaseline = 'bottom';
+  c.fillText('x (cm)', ml + sc.W * s / 2, ch - 1);
+  c.save(); c.translate(11, mt + sc.L * s / 2); c.rotate(-Math.PI / 2);
+  c.textBaseline = 'top'; c.fillText('y (cm)', 0, -4); c.restore();
+
+  // luminaires
+  sc.lamps.forEach((lamp, idx) => {
+    const base = (sc.ori === 'x' ? 0 : Math.PI / 2) + (lamp.rot ? Math.PI / 2 : 0);
+    const rw = Math.max(sc.fix.len * s, 8), rh = Math.max(sc.fix.wid * s, 6);
+    const cx = ml + lamp.x * s, cy = mt + lamp.y * s;
+    c.save();
+    c.translate(cx, cy); c.rotate(base);
+    c.fillStyle = 'rgba(255,255,255,.75)';
+    c.fillRect(-rw / 2, -rh / 2, rw, rh);
+    c.lineWidth = 1.6; c.strokeStyle = fg;
+    c.strokeRect(-rw / 2, -rh / 2, rw, rh);
+    // orientation arrow along the long axis
+    c.beginPath();
+    c.moveTo(rw / 2 - 2, 0); c.lineTo(rw / 2 - 8, -3.5); c.lineTo(rw / 2 - 8, 3.5); c.closePath();
+    c.fillStyle = accent; c.fill();
+    c.restore();
+    c.fillStyle = fg;
+    c.font = '600 11px "IBM Plex Mono",monospace';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(String(idx + 1), cx, cy);
+  });
+
+  PLAN = { ml, mt, s };
+  $('planNote').textContent = 'Valgustite arv: ' + sc.lamps.length + '. Nool näitab pikkuse suunda. Lohista valgustit – paigutus lülitub käsitsi režiimi.' +
+    (r.raised ? ' Mõõteala tihedus suurendati automaatselt ' + fmt(r.sp, 0) + ' cm-ni (limiit 20 000 punkti).' : '');
+}
+
+/* plan drag & drop */
+function planPointer(e) {
+  if (!PLAN || !state.scene) return;
+  const rc = $('plan').getBoundingClientRect();
+  const cx = (e.clientX - rc.left - PLAN.ml) / PLAN.s;
+  const cy = (e.clientY - rc.top - PLAN.mt) / PLAN.s;
+  return { cx, cy };
+}
+function nearestLamp(cx, cy, tol) {
+  const sc = state.scene;
+  let best = -1, bd = Infinity;
+  sc.lamps.forEach((l, i) => {
+    const d = Math.hypot(l.x - cx, l.y - cy);
+    if (d < bd) { bd = d; best = i; }
+  });
+  return bd <= tol ? best : -1;
+}
+let dragIdx = -1;
+$('plan').addEventListener('pointerdown', e => {
+  const p = planPointer(e);
+  if (!p) return;
+  const tol = Math.max(state.scene.fix.len, state.scene.fix.wid, 24 / PLAN.s) * 0.9;
+  dragIdx = nearestLamp(p.cx, p.cy, tol);
+  if (dragIdx >= 0) {
+    $('plan').classList.add('drag');
+    $('plan').setPointerCapture(e.pointerId);
+    if (state.layout !== 'manual') setLayout('manual', false);
+  }
+});
+$('plan').addEventListener('pointermove', e => {
+  if (dragIdx < 0 || !state.scene) return;
+  const p = planPointer(e);
+  if (!p) return;
+  const sc = state.scene;
+  state.lamps[dragIdx].x = Math.round(Math.min(sc.W, Math.max(0, p.cx)));
+  state.lamps[dragIdx].y = Math.round(Math.min(sc.L, Math.max(0, p.cy)));
+  drawPlan();
+  schedule();
+});
+function endDrag(e) {
+  if (dragIdx >= 0) {
+    dragIdx = -1;
+    $('plan').classList.remove('drag');
+    try { $('plan').releasePointerCapture(e.pointerId); } catch (err) {}
+  }
+}
+$('plan').addEventListener('pointerup', endDrag);
+$('plan').addEventListener('pointercancel', endDrag);
+
+/* =====================================================================
+   Heat map – bilinear smoothed field
+   ===================================================================== */
+function paintMap(cv, opt) {
+  opt = opt || {};
+  const sc = state.scene, r = state.result;
+  if (!sc || !r) return null;
+  const q = opt.q || state.mapQ;
+  const k = qFactor(q);
+  const showNums = opt.numbers !== undefined ? opt.numbers : $('nums').checked;
+  const smooth = opt.smooth !== undefined ? opt.smooth : ($('smooth') ? $('smooth').checked : true);
+  const W = sc.W, L = sc.L;
+  const targetW = opt.width || Math.max($('mapwrap').clientWidth || 0, 320);
+  const ml = 46, mr = 14, mt = 10, mb = 38;
+  const s = Math.min((targetW - ml - mr) / W, (opt.maxH || 560) / L);
+  const cw = ml + W * s + mr, ch = mt + L * s + mb;
+  const c = setupCanvas(cv, cw, ch);
+  const muted = cssVar('--muted'), line = cssVar('--line');
+
+  const lo = r.min * k, hiRaw = r.max * k;
+  const hi = hiRaw > lo + 1e-9 ? hiRaw : lo + 1;
+  const span = hi - lo;
+  const xe = cellEdges(r.xs, W), ye = cellEdges(r.ys, L);
+  const spacing = r.sp * s;
+  const dec = q === 'lux' ? 0 : 1;
+
+  let fs = 0;
+  if (showNums) {
+    for (const f of [11, 9]) {
+      c.font = '500 ' + f + 'px "IBM Plex Mono",monospace';
+      if (c.measureText(hi.toFixed(dec)).width + 5 <= spacing && f + 3 <= spacing) { fs = f; break; }
+    }
+  }
+  $('mapNote').textContent = 'Origo (0,0) on vasakul üleval. Ristkülikud tähistavad valgusteid õiges mõõtkavas.' +
+    (showNums && !fs ? ' Numbrid peidetud (liiga tihe ruudustik).' : '');
+
+  if (smooth) {
+    /* one pixel per grid point, drawn scaled with bilinear interpolation */
+    const off = heatCanvas(r);
+    const pad = (r.sp / 2) * s;
+    c.save();
+    c.beginPath(); c.rect(ml, mt, W * s, L * s); c.clip();
+    c.imageSmoothingEnabled = true;
+    c.imageSmoothingQuality = 'high';
+    c.drawImage(off, ml - pad, mt - pad, W * s + pad * 2, L * s + pad * 2);
+    c.restore();
+  } else {
+    r.grid.forEach((row, j) => row.forEach((v0, i) => {
+      const v = v0 * k, col = viridis((v - lo) / span);
+      c.fillStyle = rgb(col);
+      c.fillRect(ml + xe[i] * s, mt + ye[j] * s, (xe[i + 1] - xe[i]) * s + 0.6, (ye[j + 1] - ye[j]) * s + 0.6);
+    }));
+  }
+
+  if (fs) {
+    c.textBaseline = 'middle'; c.textAlign = 'center';
+    c.font = '500 ' + fs + 'px "IBM Plex Mono",monospace';
+    r.grid.forEach((row, j) => row.forEach((v0, i) => {
+      const v = v0 * k, col = viridis((v - lo) / span);
+      c.fillStyle = luminance(col) > 0.18 ? '#0a1a10' : '#ffffff';
+      c.fillText(v.toFixed(dec), ml + r.xs[i] * s, mt + r.ys[j] * s);
+    }));
+  }
+
+  c.strokeStyle = line; c.lineWidth = 1;
+  c.strokeRect(ml - 0.5, mt - 0.5, W * s + 1, L * s + 1);
+
+  // axes
+  c.fillStyle = muted; c.strokeStyle = muted;
+  c.font = '11px "IBM Plex Mono",monospace';
+  const kx = Math.max(1, Math.ceil(46 / spacing));
+  c.textAlign = 'center'; c.textBaseline = 'top';
+  r.xs.forEach((x, i) => {
+    if (i % kx) return;
+    const px = ml + x * s;
+    c.beginPath(); c.moveTo(px, mt + L * s); c.lineTo(px, mt + L * s + 4); c.stroke();
+    c.fillText(x, px, mt + L * s + 6);
+  });
+  c.textAlign = 'right'; c.textBaseline = 'middle';
+  const ky = Math.max(1, Math.ceil(18 / spacing));
+  r.ys.forEach((y, j) => {
+    if (j % ky) return;
+    const py = mt + y * s;
+    c.beginPath(); c.moveTo(ml - 4, py); c.lineTo(ml, py); c.stroke();
+    c.fillText(y, ml - 6, py);
+  });
+  c.textAlign = 'center'; c.textBaseline = 'bottom';
+  c.fillText('x (cm)', ml + W * s / 2, ch - 1);
+  c.save(); c.translate(11, mt + L * s / 2); c.rotate(-Math.PI / 2);
+  c.textBaseline = 'top'; c.fillText('y (cm)', 0, -4); c.restore();
+
+  // luminaire markers
+  sc.lamps.forEach(lamp => {
+    const rw = Math.max(sc.fix.len * s, 6), rh = Math.max(sc.fix.wid * s, 5);
+    const x0 = ml + lamp.x * s - rw / 2, y0 = mt + lamp.y * s - rh / 2;
+    c.lineWidth = 3; c.strokeStyle = '#ffffff'; c.strokeRect(x0, y0, rw, rh);
+    c.lineWidth = 1.4; c.strokeStyle = '#0a1a10'; c.strokeRect(x0, y0, rw, rh);
+  });
+
+  if (opt.legend) drawLegend(cw, lo, hi, muted, q, dec);
+  return { lo, hi };
+}
+
+function drawLegend(w, lo, hi, muted, q, dec) {
+  const lg = $('legend'), c = setupCanvas(lg, w, 54);
+  const x0 = 46, x1 = Math.max(w - 14, 120), bw = x1 - x0;
+  for (let i = 0; i < bw; i++) {
+    c.fillStyle = rgb(viridis(i / (bw - 1)));
+    c.fillRect(x0 + i, 16, 1.6, 14);
+  }
+  c.strokeStyle = cssVar('--line'); c.strokeRect(x0 - 0.5, 15.5, bw + 1, 15);
+  c.fillStyle = muted; c.strokeStyle = muted;
+  c.font = '11px "IBM Plex Mono",monospace'; c.textBaseline = 'top';
+  const n = bw > 300 ? 5 : 3;
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1), x = x0 + t * bw;
+    c.beginPath(); c.moveTo(x, 30); c.lineTo(x, 34); c.stroke();
+    c.textAlign = i === 0 ? 'left' : (i === n - 1 ? 'right' : 'center');
+    c.fillText((lo + t * (hi - lo)).toFixed(dec), x, 36);
+  }
+  c.textAlign = 'left'; c.fillText(QNAME[q][0] + ', ' + QNAME[q][1], 0, 0);
+}
+
+function drawMap() {
+  if (!state.result) return;
+  paintMap($('map'), { q: state.mapQ, numbers: $('nums').checked, legend: true });
+}
+
+$('map').addEventListener('pointermove', e => {
+  const r = state.result, sc = state.scene;
+  if (!r || !sc || !$('map').width) return;
+  const rc = $('map').getBoundingClientRect();
+  const ml = 46, mt = 10;
+  const s = Math.min((parseFloat($('map').style.width) - 46 - 14) / sc.W, 560 / sc.L);
+  const x = (e.clientX - rc.left - ml) / s, y = (e.clientY - rc.top - mt) / s;
+  if (x < -sc.step / 2 || y < -sc.step / 2 || x > sc.W + sc.step / 2 || y > sc.L + sc.step / 2) return;
+  const near = (a, v) => a.reduce((b, _, i) => Math.abs(a[i] - v) < Math.abs(a[b] - v) ? i : b, 0);
+  const i = near(r.xs, x), j = near(r.ys, y);
+  const q = state.mapQ, k = qFactor(q);
+  $('hover').textContent = 'x = ' + r.xs[i] + ' cm, y = ' + r.ys[j] + ' cm: ' +
+    fmt(r.grid[j][i] * k, q === 'lux' ? 0 : 1) + ' ' + QNAME[q][1] + ' (' + QNAME[q][0] + ')';
+});
+$('map').addEventListener('pointerdown', e => {
+  const ev = new PointerEvent('pointermove', { clientX: e.clientX, clientY: e.clientY });
+  $('map').dispatchEvent(ev);
+});
+
+/* =====================================================================
+   3D view (three.js, loaded on demand)
+   ===================================================================== */
+let THREE_OK = false, T3 = null;
+
+function loadThree() {
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js';
+  s.onload = () => {
+    THREE_OK = typeof window.THREE !== 'undefined';
+    if (THREE_OK) { try { init3D(); } catch (err) { show3DMsg('3D vaate algatamine ebaõnnestus.'); } }
+    else show3DMsg('3D vaade vajab internetti (three.js)');
+  };
+  s.onerror = () => show3DMsg('3D vaade vajab internetti (three.js)');
+  document.head.appendChild(s);
+}
+function show3DMsg(t) {
+  const w = $('tdCanvasWrap');
+  w.innerHTML = '<div id="tdMsg">' + t + '</div>';
+}
+
+function init3D() {
+  const host = $('tdCanvasWrap');
+  host.innerHTML = '';
+  const w = Math.max(host.clientWidth, 320), h = 440;
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(w, h);
+  host.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const cam = new THREE.PerspectiveCamera(45, w / h, 0.01, 200);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x223322, 1.2));
+  const dl = new THREE.DirectionalLight(0xffffff, 0.8);
+  dl.position.set(2.5, 4, 3);
+  scene.add(dl);
+
+  const dyn = new THREE.Group();
+  scene.add(dyn);
+
+  T3 = { renderer, scene, cam, dyn, theta: 0.9, phi: 1.05, r: 2.6, target: { x: 0, y: 0.2, z: 0 }, fitted: false };
+  bind3DControls(renderer.domElement);
+  build3D();
+  render3D();
+}
+
+function render3D() {
+  if (!T3) return;
+  const { renderer, scene, cam, theta, phi, r, target } = T3;
+  cam.position.set(
+    target.x + r * Math.sin(phi) * Math.cos(theta),
+    target.y + r * Math.cos(phi),
+    target.z + r * Math.sin(phi) * Math.sin(theta)
+  );
+  cam.lookAt(target.x, target.y, target.z);
+  renderer.render(scene, cam);
+}
+
+function bind3DControls(el) {
+  let drag = null;
+  el.addEventListener('pointerdown', e => {
+    drag = { x: e.clientX, y: e.clientY, pan: e.shiftKey || e.button === 2 };
+    try { el.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  el.addEventListener('pointermove', e => {
+    if (!drag || !T3) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    drag.x = e.clientX; drag.y = e.clientY;
+    if (drag.pan) {
+      const sc = T3.r * 0.0016;
+      const rx = -Math.sin(T3.theta), rz = Math.cos(T3.theta);
+      T3.target.x -= rx * dx * sc;
+      T3.target.z -= rz * dx * sc;
+      T3.target.y += dy * sc;
+    } else {
+      T3.theta -= dx * 0.008;
+      T3.phi = Math.max(0.12, Math.min(Math.PI / 2 - 0.03, T3.phi - dy * 0.008));
+    }
+    render3D();
+  });
+  const stop = () => { drag = null; };
+  el.addEventListener('pointerup', stop);
+  el.addEventListener('pointercancel', stop);
+  el.addEventListener('wheel', e => {
+    e.preventDefault();
+    if (!T3) return;
+    T3.r = Math.max(0.4, Math.min(40, T3.r * Math.exp(e.deltaY * 0.0012)));
+    render3D();
+  }, { passive: false });
+  el.addEventListener('contextmenu', e => e.preventDefault());
+}
+
+function clearGroup(g) {
+  while (g.children.length) {
+    const o = g.children.pop();
+    if (o.geometry) o.geometry.dispose();
+    if (o.material) {
+      if (o.material.map) o.material.map.dispose();
+      o.material.dispose();
+    }
+  }
+}
+
+function heatTexture(r) {
+  const src = heatCanvas(r);
+  const cv = document.createElement('canvas');
+  cv.width = r.nx; cv.height = r.ny;
+  const ctx = cv.getContext('2d');
+  ctx.translate(0, r.ny); ctx.scale(1, -1);
+  ctx.drawImage(src, 0, 0);
+  const t = new THREE.CanvasTexture(cv);
+  t.magFilter = THREE.LinearFilter;
+  t.minFilter = THREE.LinearFilter;
+  if (THREE.SRGBColorSpace) t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+function build3D() {
+  if (!T3 || !state.scene || !state.result) return;
+  const sc = state.scene, r = state.result;
+  const W = sc.W / 100, L = sc.L / 100;
+  const g = T3.dyn;
+  clearGroup(g);
+
+  // floor
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(W, L),
+    new THREE.MeshStandardMaterial({ color: 0x8fb29a, roughness: 1, transparent: true, opacity: 0.4, side: THREE.DoubleSide })
+  );
+  floor.rotation.x = -Math.PI / 2;
+  g.add(floor);
+
+  // measurement plane with heat texture
+  const tex = heatTexture(r);
+  const planeH = sc.plane / 100 + 0.003;
+  const heat = new THREE.Mesh(
+    new THREE.PlaneGeometry(W, L),
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.96, side: THREE.DoubleSide })
+  );
+  heat.rotation.x = -Math.PI / 2;
+  heat.position.y = planeH;
+  g.add(heat);
+
+  // walls
+  const wallH = sc.roomH / 100;
+  const wallMat = new THREE.MeshBasicMaterial({ color: 0x7fa88c, transparent: true, opacity: 0.09, side: THREE.DoubleSide });
+  const walls = [
+    [W, wallH, 0, wallH / 2, -L / 2, 0],
+    [W, wallH, 0, wallH / 2, L / 2, 0],
+    [L, wallH, -W / 2, wallH / 2, 0, Math.PI / 2],
+    [L, wallH, W / 2, wallH / 2, 0, Math.PI / 2]
+  ];
+  walls.forEach(([ww, hh, x, y, z, ry]) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(ww, hh), wallMat);
+    m.position.set(x, y, z);
+    m.rotation.y = ry;
+    g.add(m);
+  });
+
+  // luminaires + beam cones
+  const hM = sc.h / 100;
+  const yLamp = planeH + hM;
+  const lenM = sc.fix.len / 100, widM = sc.fix.wid / 100;
+  const boxMat = new THREE.MeshStandardMaterial({ color: 0xf2f6f3, emissive: 0xdfe9e2, emissiveIntensity: 0.6, roughness: 0.6 });
+  const wireMat = new THREE.MeshBasicMaterial({ color: 0x1c7a4a, wireframe: true, transparent: true, opacity: 0.35 });
+
+  sc.lamps.forEach(lamp => {
+    const base = (sc.ori === 'x' ? 0 : Math.PI / 2) + (lamp.rot ? Math.PI / 2 : 0);
+    const bx = new THREE.Mesh(new THREE.BoxGeometry(lenM, 0.03, widM), boxMat);
+    bx.position.set(lamp.x / 100 - W / 2, yLamp, lamp.y / 100 - L / 2);
+    bx.rotation.y = -base;
+    g.add(bx);
+
+    // cone half angle from the mean of C0/C90 beams
+    const half = Math.min(Math.max((sc.fix.beamC0 + sc.fix.beamC90) / 4, 5), 88) * Math.PI / 180;
+    const rad = Math.tan(half) * hM;
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(rad, hM, 20, 1, true), wireMat);
+    cone.geometry.translate(0, -hM / 2, 0);
+    cone.position.set(bx.position.x, yLamp, bx.position.z);
+    g.add(cone);
+  });
+
+  if (!T3.fitted) {
+    T3.fitted = true;
+    T3.r = Math.max(W, L) * 1.9;
+    T3.target = { x: 0, y: 0.15, z: 0 };
+  }
+  resize3D();
+  render3D();
+}
+
+function resize3D() {
+  if (!T3) return;
+  const host = $('tdCanvasWrap');
+  const w = Math.max(host.clientWidth, 320), h = 440;
+  T3.renderer.setSize(w, h);
+  T3.cam.aspect = w / h;
+  T3.cam.updateProjectionMatrix();
+}
+
+/* =====================================================================
+   Report
+   ===================================================================== */
+function readProject() {
+  return {
+    projekt: $('rpProjekt').value || '—',
+    klient: $('rpKlient').value || '—',
+    kuupaev: $('rpKuupaev').value || new Date().toISOString().slice(0, 10),
+    autor: $('rpAutor').value || '—'
+  };
+}
+
+function matchTargets(avg) {
+  const hits = [];
+  TARGETS.forEach((t, i) => { if (avg >= t.ppfd[0] && avg <= t.ppfd[1]) hits.push(i); });
+  return hits;
+}
+
+function refreshReport() {
+  const sc = state.scene, r = state.result;
+  if (!sc || !r) return;
+  const P = readProject();
+  $('repMeta').innerHTML = 'Kuupäev: <b>' + P.kuupaev + '</b><br>Autor: ' + P.autor;
+
+  const area = sc.W * sc.L / 1e4;
+  const sh = sc.fix.sh;
+  const hits = matchTargets(r.avg);
+
+  let h = '';
+  h += '<h2>Projekt</h2><div class="rep-cols"><table>' +
+    '<tr><th>Projekt</th><td>' + P.projekt + '</td></tr>' +
+    '<tr><th>Klient</th><td>' + P.klient + '</td></tr></table>' +
+    '<table><tr><th>Kuupäev</th><td>' + P.kuupaev + '</td></tr>' +
+    '<tr><th>Autor</th><td>' + P.autor + '</td></tr></table></div>';
+
+  h += '<h2>Ruum ja arvutusparameetrid</h2><div class="rep-cols"><table>' +
+    '<tr><th>Kasvuala</th><td>' + fmt(sc.W) + ' × ' + fmt(sc.L) + ' cm (' + fmt(area, 2) + ' m²)</td></tr>' +
+    '<tr><th>Kõrgus</th><td>' + fmt(sc.roomH) + ' cm</td></tr>' +
+    '<tr><th>Täpne mõõtekaugus</th><td>' + fmt(sc.mount) + ' cm</td></tr></table>' +
+    '<table><tr><th>Mõõteala tihedus</th><td>' + fmt(r.sp) + ' cm (' + r.nx + ' × ' + r.ny + ')</td></tr>' +
+    '<tr><th>Seinte peegeldus</th><td>' + fmt(sc.rho * 100) + ' %</td></tr>' +
+    '<tr><th>Hooldetegur MF</th><td>' + fmt(sc.mf, 2) + '</td></tr>' +
+    '<tr><th>Fotoperiood</th><td>' + fmt(sc.hours, 1) + ' h ööpäevas</td></tr></table></div>';
+
+  const lmCell = sc.fix.lm != null
+    ? fmt(sc.fix.lm, 0) + ' lm' + (sc.fix.lmw ? ' (' + fmt(sc.fix.lmw, 0) + ' lm/W)' : '')
+    : '—';
+
+  h += '<h2>Valgustid</h2><table>' +
+    '<tr><th>Tüüp</th><td>' + (sc.fix.label || 'Vabalt määratud') + (sc.fix.ies ? ' + ' + sc.fix.ies.file : '') + '</td>' +
+    '<th>Kogus</th><td>' + sc.lamps.length + ' tk</td></tr>' +
+    '<tr><th>Mõõdud (P × L)</th><td>' + fmt(sc.fix.len) + ' × ' + fmt(sc.fix.wid) + ' cm</td>' +
+    '<th>PPF / valgusti</th><td>' + fmt(sc.fix.ppf, 1) + ' µmol/s</td></tr>' +
+    '<tr><th>Valgusvoog / valgusti</th><td>' + lmCell + '</td>' +
+    '<th>Voolutarve / valgusti</th><td>' + fmt(sc.fix.watts) + ' W</td></tr>' +
+    '<tr><th>Jaotus</th><td>' + (sc.fix.ies ? 'IES/LDT fail' : 'C0 ' + fmt(sc.fix.beamC0) + '° / C90 ' + fmt(sc.fix.beamC90) + '°') + '</td>' +
+    '<th>Voolutarve kokku</th><td>' + fmt(r.totalW, 0) + ' W</td></tr>' +
+    '<tr><th>Kogu-PPF</th><td>' + fmt(r.totalPPF, 0) + ' µmol/s</td>' +
+    '<th>Süsteemi efektiivsus</th><td>' + (r.totalW > 0 ? fmt(r.totalPPF / r.totalW, 2) : '–') + ' µmol/J</td></tr>' +
+    '<tr><th>Võimsustihedus</th><td colspan="3">' + fmt(r.totalW / area, 0) + ' W/m²</td></tr></table>';
+
+  h += '<h2>Tulemused</h2><div class="rep-cols"><table>' +
+    '<tr><th>Keskmine PPFD</th><td><b>' + fmt(r.avg) + '</b> µmol/m²/s</td></tr>' +
+    '<tr><th>Minimaalne</th><td>' + fmt(r.min) + ' µmol/m²/s</td></tr>' +
+    '<tr><th>Maksimaalne</th><td>' + fmt(r.max) + ' µmol/m²/s</td></tr>' +
+    '<tr><th>Ühtlus (min/kesk.)</th><td>' + fmt(r.u1, 2) + '</td></tr></table>' +
+    '<table><tr><th>Ühtlus (min/max)</th><td>' + fmt(r.u2, 2) + '</td></tr>' +
+    '<tr><th>DLI</th><td>' + fmt(r.dli, 1) + ' mol/m²/päev</td></tr>' +
+    '<tr><th>Alale langeb</th><td>' + fmt(r.frac * 100) + ' % valgusest</td></tr>' +
+    '<tr><th>Sinine / roheline / punane</th><td>' + nf(r.avg * sh.b) + ' / ' + nf(r.avg * sh.g) + ' / ' + nf(r.avg * sh.r) + '</td></tr></table></div>';
+
+  h += '<h2>Spekter</h2>' + spectrumMarkup(sc, false);
+
+  h += '<h2>Valgusjaotuse kaart</h2><div id="reportImgWrap"><img id="repMap" alt="PPFD kaart"></div>';
+
+  h += '<h2>Võrdlus sihtvahemikega (kirjanduse tüüpvahemikud)</h2><table><tr><th style="width:34%">Kultuur</th><th style="width:22%">PPFD, µmol/m²/s</th><th style="width:22%">DLI, mol/m²/päev</th><th style="width:22%">Hinnang</th></tr>' +
+    TARGETS.map((t, i) => {
+      const on = hits.indexOf(i) >= 0;
+      const verdict = on ? 'sobib' : (r.avg < t.ppfd[0] ? 'alla' : 'üle');
+      return '<tr' + (on ? ' style="background:var(--rep-hl)"' : '') + '><td>' + t.name + '</td><td>' + t.ppfd[0] + '–' + t.ppfd[1] +
+        '</td><td>' + t.dli[0] + '–' + t.dli[1] + '</td><td>' + verdict + '</td></tr>';
+    }).join('') + '</table>';
+
+  let recTxt;
+  if (hits.length) {
+    const names = hits.map(i => TARGETS[i].name);
+    recTxt = 'Sobib: ' + names.slice(0, 3).join(', ') + (names.length > 3 ? ' …' : '') + '.';
+  } else {
+    recTxt = r.avg < TARGETS[0].ppfd[0]
+      ? 'Keskmine PPFD on sihtvahemikest madalam – tõsta valgusteid lähemale või lisa valgusteid.'
+      : 'Keskmine PPFD ületab sihtvahemikud – tõsta valgusteid kõrgemale või vähenda valgustite arvu.';
+  }
+  h += '<p style="font-size:10px;margin:4px 0 0"><b>Soovitus:</b> ' + recTxt +
+    (r.u1 < 0.7 ? ' Ühtlus on madal (' + fmt(r.u1, 2) + ') – vähenda valgustite vahekaugust.' : '') + '</p>';
+
+  h += '<p class="method">Meetod: punktvalgusallikate summa + seinapeegeldused 1.–2. järk, cos<sup>m</sup> C0/C90 jaotus või IES/LDT fail; hooldetegur MF. ' +
+    'Valgusvoog on antud luumenites või PPF-ina, mitte tuletatud voolutarvest. ' +
+    'Teoreetiline mudel – kontrolli PAR-mõõturiga. Ei asenda DIALux radiosity-arvutust ega EN 12464 aruannet.</p>';
+
+  $('repBody').innerHTML = h;
+
+  // heat map image (smooth)
+  const cv = document.createElement('canvas');
+  paintMap(cv, { q: 'tot', numbers: false, width: 700, maxH: 420, smooth: true });
+  const img = $('repMap');
+  if (img) img.src = cv.toDataURL('image/png');
+}
+
+/* =====================================================================
+   Main recalculation loop
+   ===================================================================== */
+let recalcTimer = null;
+function schedule() {
+  clearTimeout(recalcTimer);
+  recalcTimer = setTimeout(recalc, 150);
+}
+
+function recalc() {
+  const t0 = performance.now();
+  const { sc, errs } = readScene();
+  state.scene = sc;
+  state.result = computeField(sc);
+  state.calcMs = performance.now() - t0;
+
+  const msg = $('msg');
+  if (errs.length) { msg.textContent = 'Kontrolli sisendeid: ' + errs.join('; '); msg.hidden = false; }
+  else { msg.textContent = ''; msg.hidden = true; }
+
+  const lmwOut = $('lmwOut');
+  if (lmwOut) lmwOut.textContent = (sc.fix.lm != null && sc.fix.watts > 0)
+    ? '= ' + fmt(sc.fix.lm / sc.fix.watts, 0) + ' lm/W' : '—';
+
+  renderStrip();
+  renderStats();
+  renderGuide();
+  renderSpectrum();
+  renderCalcInfo();
+  renderTable();
+  renderLampTable();
+
+  if (state.view === '2d') drawPlan();
+  else if (state.view === 'map') drawMap();
+  else if (state.view === '3d') build3D();
+
+  if (state.step === 5) refreshReport();
+}
+
+/* =====================================================================
+   UI wiring
+   ===================================================================== */
+function setLayout(mode, rebuild) {
+  state.layout = mode;
+  $('pAuto').checked = mode === 'auto';
+  $('pMan').checked = mode === 'manual';
+  if (mode === 'auto' && rebuild) {
+    const sc = state.scene;
+    if (sc) state.lamps = autoLamps(sc.W, sc.L, sc.rows, sc.cols);
+  }
+  $('rows').disabled = $('cols').disabled = mode !== 'auto';
+  syncUI();
+}
+
+function goStep(n) {
+  state.step = n;
+  $$('.stepbtn').forEach(b => b.classList.toggle('on', +b.dataset.step === n));
+  $$('.pstep').forEach(p => p.classList.toggle('on', +p.dataset.p === n));
+  const rep = $('report');
+  rep.classList.toggle('on', n === 5);
+  $('viewbox').hidden = n === 5;
+  $('strip').hidden = n === 5;
+  document.querySelector('.lamps').hidden = n === 5;
+  if (n === 1 || n === 2) setView('2d');
+  else if (n === 3) setView('3d');
+  else if (n === 4) setView('map');
+  else if (n === 5) refreshReport();
+}
+
+function setView(v) {
+  state.view = v;
+  $$('.viewtab').forEach(b => b.classList.toggle('on', b.dataset.view === v));
+  $('view2d').hidden = v !== '2d';
+  $('viewmap').hidden = v !== 'map';
+  $('view3d').hidden = v !== '3d';
+  if (v === '2d') drawPlan();
+  if (v === 'map') drawMap();
+  if (v === '3d') {
+    if (T3) { resize3D(); render3D(); }
+    else if (!THREE_OK) show3DMsg('3D vaade vajab internetti (three.js)');
+  }
+}
+
+/* preset application */
+let applyingPreset = false;
+function applyPreset(id) {
+  const p = PRESETS.find(x => x.id === id) || PRESETS[PRESETS.length - 1];
+  applyingPreset = true;
+  $('preset').value = p.id;
+  $('ll').value = p.len;
+  $('lw').value = p.wid;
+  $('pw').value = p.watts;
+  if (p.lm != null) $('lm').value = p.lm;
+  if (Array.prototype.some.call($('cct').options, o => o.value === String(p.cct))) $('cct').value = String(p.cct);
+  else { $('cct').value = 'x'; $('cctx').value = p.cct; }
+  $('cri').value = String(p.cri);
+  $('beamC0').value = p.b0;
+  $('beamC90').value = p.b90;
+  $('mode').value = p.mode;
+  const sp = whiteSpectrum(p.cct, p.cri);
+  $('shB').value = (sp.b * 100).toFixed(1);
+  $('shG').value = (sp.g * 100).toFixed(1);
+  $('shR').value = (sp.r * 100).toFixed(1);
+  $('shFR').value = (sp.fr * 100).toFixed(1);
+  applyingPreset = false;
+  syncUI();
+  schedule();
+}
+
+function markCustom() {
+  if (applyingPreset) return;
+  const sel = $('preset');
+  if (sel.value === 'free') return;
+  sel.value = 'free';
+  const opt = Array.prototype.find.call(sel.options, o => o.value === 'free');
+  if (opt) opt.textContent = 'Vabalt määratud (muudetud)';
+  syncUI();
+}
+
+function syncUI() {
+  const mode = $('mode').value;
+  const has = !!state.ies;
+  $('lmL').hidden = mode !== 'lm';
+  $('lmwL').hidden = mode !== 'lm';
+  $('ppfL').hidden = mode !== 'ppf';
+  $('cct').parentNode.hidden = mode !== 'lm';
+  $('cri').parentNode.hidden = mode !== 'lm';
+  $('cctxL').hidden = mode !== 'lm' || $('cct').value !== 'x';
+  $('shBox').hidden = mode === 'lm';
+  $('beamC0').disabled = $('beamC90').disabled = has;
+  $('beamHint').textContent = has
+    ? 'Jaotus tuleb IES/LDT failist, nurki ei kasutata.'
+    : 'C0 = piki valgusti pikkust, C90 = risti. IES/LDT faili korral tuleb jaotus failist.';
+  $('autoBox').hidden = state.layout !== 'auto';
+  $('rows').disabled = $('cols').disabled = state.layout !== 'auto';
+  $('addLamp').disabled = $('delLamp').disabled = state.layout !== 'manual';
+  $('iesx').hidden = !has;
+  $('iesInfo').hidden = !has;
+}
+
+function showIes() {
+  const b = $('iesInfo');
+  if (!state.ies) { b.hidden = true; b.textContent = ''; return; }
+  const ies = state.ies;
+  const k = ies.info, l = [ies.file + ' (' + ies.kind + ')'];
+  ['MANUFAC', 'LUMCAT', 'LUMINAIRE'].forEach(x => { if (k[x]) l.push('[' + x + '] ' + k[x]); });
+  const H = ies.H;
+  const sym = ies.nH < 2 ? 'pöördsümmeetriline'
+    : H[ies.nH - 1] <= 90.001 ? 'C 0–90° (neljandiksümmeetria)'
+    : H[ies.nH - 1] <= 180.001 ? 'C 0–180°'
+    : 'C ' + H[0] + '–' + H[ies.nH - 1] + '°';
+  l.push('Faili valgusvoog: ' + fmtI(ies.phi) + ' lm' +
+    (ies.declared ? ' (deklareeritud ' + fmtI(ies.declared) + ' lm)' : '') +
+    (ies.watts ? ', sisendvõimsus ' + fmt(ies.watts, 1) + ' W' : ''));
+  l.push(ies.nV + ' γ × ' + ies.nH + ' C nurka, ' + sym);
+  if (ies.lenCm > 0 || ies.widCm > 0) l.push('Valgusava: ' + fmt(ies.lenCm, 1) + ' × ' + fmt(ies.widCm, 1) + ' cm');
+  b.textContent = l.join('\n');
+  b.hidden = false;
+}
+
+function dropIes() {
+  state.ies = null;
+  $('iesf').value = '';
+  $('iesErr').hidden = true;
+  showIes();
+  syncUI();
+}
+
+/* =====================================================================
+   Events
+   ===================================================================== */
+$('steps').addEventListener('click', e => {
+  const b = e.target.closest('.stepbtn');
+  if (b) goStep(+b.dataset.step);
+});
+$('viewTabs').addEventListener('click', e => {
+  const b = e.target.closest('.viewtab');
+  if (b) setView(b.dataset.view);
+});
+
+$('preset').addEventListener('change', e => applyPreset(e.target.value));
+
+$('mode').addEventListener('change', () => { syncUI(); schedule(); });
+$('cct').addEventListener('change', syncUI);
+
+['ll', 'lw', 'pw', 'lm', 'cct', 'cri', 'cctx', 'beamC0', 'beamC90', 'ppf', 'shB', 'shG', 'shR', 'shFR']
+  .forEach(id => $(id).addEventListener('input', markCustom));
+
+document.querySelectorAll('input[name=place]').forEach(el => el.addEventListener('change', () => {
+  setLayout($('pMan').checked ? 'manual' : 'auto', $('pAuto').checked);
+  schedule();
+}));
+
+$('ori').addEventListener('change', schedule);
+$('mapQ').addEventListener('change', () => { state.mapQ = $('mapQ').value; renderTable(); drawMap(); if (state.step === 5) refreshReport(); });
+$('nums').addEventListener('change', drawMap);
+$('smooth').addEventListener('change', drawMap);
+$('underlay').addEventListener('change', drawPlan);
+
+$('addLamp').addEventListener('click', () => {
+  const sc = state.scene;
+  const W = sc ? sc.W : 120, L = sc ? sc.L : 120;
+  state.lamps.push({ x: Math.round(W / 2), y: Math.round(L / 2), rot: 0 });
+  setLayout('manual');
+  schedule();
+});
+$('delLamp').addEventListener('click', () => {
+  if (state.lamps.length > 1) state.lamps.pop();
+  setLayout('manual');
+  schedule();
+});
+
+$('lampBody').addEventListener('input', e => {
+  const inp = e.target.closest('input[data-k]');
+  if (!inp) return;
+  const i = +inp.dataset.i, k = inp.dataset.k;
+  const v = inp.valueAsNumber;
+  if (!isFinite(v) || !state.lamps[i]) return;
+  state.lamps[i][k] = v;
+  if (state.layout !== 'manual') setLayout('manual');
+  drawPlan();
+  schedule();
+});
+$('lampBody').addEventListener('click', e => {
+  const rot = e.target.closest('button[data-rot]');
+  if (rot) {
+    const i = +rot.dataset.rot;
+    if (state.lamps[i]) state.lamps[i].rot = state.lamps[i].rot ? 0 : 1;
+    setLayout('manual');
+    schedule();
+    return;
+  }
+  const del = e.target.closest('button[data-del]');
+  if (del) {
+    const i = +del.dataset.del;
+    if (state.lamps.length > 1) state.lamps.splice(i, 1);
+    setLayout('manual');
+    schedule();
+  }
+});
+
+$('calcBtn').addEventListener('click', () => { recalc(); });
+$('printBtn').addEventListener('click', () => { if (state.step !== 5) { goStep(5); } setTimeout(() => window.print(), 120); });
+$('printBtn2').addEventListener('click', () => setTimeout(() => window.print(), 120));
+
+$('copy').addEventListener('click', () => {
+  if (!state.result) return;
+  const t = tableCsv(), btn = $('copy'), old = btn.textContent;
+  const done = () => { btn.textContent = 'Kopeeritud'; setTimeout(() => btn.textContent = old, 1500); };
+  const fb = () => {
+    const ta = $('csvbuf'); ta.value = t; ta.select();
+    try { document.execCommand('copy'); } catch (err) {}
+    done();
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done).catch(fb);
+  else fb();
+});
+
+$('csvDl').addEventListener('click', () => {
+  if (!state.result) return;
+  download('ppfd-tabel.csv', '\ufeff' + tableCsv(), 'text/csv;charset=utf-8');
+});
+$('pngDl').addEventListener('click', () => {
+  if (!state.result) return;
+  const cv = document.createElement('canvas');
+  paintMap(cv, { q: state.mapQ, numbers: true, width: 1100, maxH: 900 });
+  const a = document.createElement('a');
+  a.href = cv.toDataURL('image/png');
+  a.download = 'ppfd-kaart.png';
+  a.click();
+});
+
+function download(name, data, type) {
+  const blob = new Blob([data], { type: type || 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+$('reset').addEventListener('click', () => {
+  $('w').value = 88; $('l').value = 1822; $('rh').value = 50;
+  $('h').value = 35; $('step').value = '10';
+  $('rho').value = 60; $('mf').value = 0.9; $('hours').value = 16;
+  $('rows').value = 1; $('cols').value = 4;
+  $('ori').value = 'y';
+  $('underlay').checked = false;
+  state.layout = 'auto';
+  $('pAuto').checked = true;
+  $('pMan').checked = false;
+  dropIes();
+  applyPreset('tp_120_6k');
+  state.lamps = autoLamps(88, 1822, 1, 4);
+  setLayout('auto');
+  goStep(1);
+  recalc();
+});
+
+/* IES / LDT upload */
+$('iesf').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    try {
+      const P = /\.ldt$/i.test(file.name) ? parseLDT(fr.result) : parseIES(fr.result);
+      const B = buildIES(P);
+      if (!(B.phi > 0)) throw new Error('kandelad annavad nullist valgusvoo');
+      B.file = file.name;
+      state.ies = B;
+      const clamp = v => Math.min(400, Math.max(1, Math.round(v)));
+      if (P.lenCm > 0) $('ll').value = clamp(P.lenCm);
+      if (P.widCm > 0) $('lw').value = clamp(P.widCm);
+      if (P.watts > 0) $('pw').value = Math.round(P.watts);
+      if ($('mode').value === 'lm') $('lm').value = Math.round(B.phi);
+      $('iesErr').hidden = true;
+    } catch (err) {
+      $('iesErr').textContent = 'Faili ei saanud lugeda: ' + err.message;
+      $('iesErr').hidden = false;
+      e.target.value = '';
+    }
+    showIes();
+    markCustom();
+    syncUI();
+    recalc();
+  };
+  fr.onerror = () => {
+    $('iesErr').textContent = 'Faili lugemine ebaõnnestus';
+    $('iesErr').hidden = false;
+  };
+  fr.readAsText(file, 'ISO-8859-1');
+});
+$('iesx').addEventListener('click', () => { dropIes(); schedule(); });
+
+/* generic input handling */
+['w', 'l', 'rh', 'h', 'step', 'rho', 'mf', 'hours', 'rows', 'cols', 'ori'].forEach(id => {
+  const el = $(id);
+  if (el) el.addEventListener('input', schedule);
+  if (el) el.addEventListener('change', schedule);
+});
+['rpProjekt', 'rpKlient', 'rpKuupaev', 'rpAutor'].forEach(id => $(id).addEventListener('input', () => { if (state.step === 5) refreshReport(); }));
+
+/* theme */
+function currentTheme() {
+  const set = document.documentElement.getAttribute('data-theme');
+  if (set) return set;
+  return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+}
+function updateThemeBtn() {
+  const t = currentTheme();
+  document.querySelectorAll('#themeSeg button').forEach(b => {
+    const on = b.dataset.t === t;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
+document.querySelectorAll('#themeSeg button').forEach(b => b.addEventListener('click', () => {
+  const next = b.dataset.t;
+  document.documentElement.setAttribute('data-theme', next);
+  try { localStorage.setItem('kv-theme', next); } catch (err) {}
+  updateThemeBtn();
+  drawPlan(); drawMap();
+  if (T3) render3D();
+}));
+function selfTest() {
+  try {
+    // (a) energy conservation: narrow beam so the finite 6×6 m plane captures ~all flux
+    const W = 600, L = 600, h = 100, step = 10;
+    const sc = {
+      W, L, h, step, rho: 0, mf: 1, hours: 18, ori: 'x',
+      lamps: [{ x: 300, y: 300, rot: 0 }],
+      fix: { len: 10, wid: 10, watts: 100, ppf: 100, beamC0: 30, beamC90: 30, ies: null }
+    };
+    const r = computeField(sc);
+    let flux = 0;
+    const cell = (step / 100) * (step / 100);
+    r.grid.forEach(row => row.forEach(v => { flux += v * cell; }));
+    const errA = Math.abs(flux - sc.fix.ppf) / sc.fix.ppf;
+
+    // (b) symmetry of a centred 2×2 layout
+    const sc2 = {
+      W: 120, L: 120, h: 40, step: 10, rho: 0, mf: 1, hours: 18, ori: 'x',
+      lamps: autoLamps(120, 120, 2, 2),
+      fix: { len: 55, wid: 30, watts: 240, ppf: 600, beamC0: 120, beamC90: 120, ies: null }
+    };
+    const r2 = computeField(sc2);
+    let maxAsym = 0;
+    for (let j = 0; j < r2.ny; j++) {
+      for (let i = 0; i < r2.nx; i++) {
+        const a = r2.grid[j][i];
+        const b = r2.grid[j][r2.nx - 1 - i];
+        const c = r2.grid[r2.ny - 1 - j][i];
+        const ref = Math.max(a, 1e-9);
+        maxAsym = Math.max(maxAsym, Math.abs(a - b) / ref, Math.abs(a - c) / ref);
+      }
+    }
+
+    if (errA < 0.03 && maxAsym < 0.01) {
+      console.log('selfTest OK', { energyErr: errA.toFixed(4), asym: maxAsym.toExponential(2) });
+    } else {
+      console.log('selfTest FAIL', {
+        integratedFlux: flux.toFixed(3), expectedPPF: sc.fix.ppf,
+        energyErr: (errA * 100).toFixed(2) + ' %', maxAsymmetry: (maxAsym * 100).toFixed(3) + ' %'
+      });
+    }
+  } catch (err) {
+    console.log('selfTest viga:', err.message);
+  }
+}
+
+function buildPresetOptions() {
+  const sel = $('preset');
+  sel.innerHTML = PRESETS.map(p => '<option value="' + p.id + '">' + p.name + '</option>').join('');
+}
+
+function init() {
+  // theme
+  let saved = null;
+  try { saved = localStorage.getItem('kv-theme'); } catch (err) {}
+  if (saved === 'dark' || saved === 'light' || saved === 'blue') document.documentElement.setAttribute('data-theme', saved);
+  updateThemeBtn();
+
+  // date
+  $('rpKuupaev').value = new Date().toISOString().slice(0, 10);
+
+  buildPresetOptions();
+
+  // default scene (Junn 03.11): 88×1822×50 cm, 4 × triproof 6000 K tubes, long axis y, 1 row × 4 cols, 35 cm, MF 0.9, 16 h
+  $('w').value = 88; $('l').value = 1822; $('rh').value = 50;
+  $('h').value = 35; $('step').value = '10';
+  $('rho').value = 60; $('mf').value = 0.9; $('hours').value = 16;
+  $('rows').value = 1; $('cols').value = 4;
+  $('ori').value = 'y';
+  applyPreset('tp_120_6k');
+  state.lamps = autoLamps(88, 1822, 1, 4);
+  setLayout('auto');
+
+  // spectrum card exists only in step 4 markup; create container
+  if (!$('specBox')) {
+    const holder = document.createElement('div');
+    holder.id = 'specBox';
+    const panel4 = document.querySelector('.pstep[data-p="4"]');
+    const stats = $('stats');
+    if (panel4 && stats) panel4.insertBefore(holder, stats.nextSibling);
+  }
+  // guide + recommendation live in the results panel
+  if (!$('guide')) {
+    const g = document.createElement('div');
+    g.id = 'guide';
+    const rec = document.createElement('p');
+    rec.id = 'recText';
+    const chip = document.createElement('span');
+    chip.id = 'chip';
+    chip.className = 'chip';
+    const host = document.querySelector('.pstep[data-p="4"]');
+    if (host) {
+      const h3 = document.createElement('div');
+      h3.className = 'sub';
+      h3.textContent = 'Soovituslik PPFD vahemik (kirjanduse tüüpvahemikud)';
+      host.insertBefore(h3, $('tblH'));
+      host.insertBefore(g, $('tblH'));
+      host.insertBefore(rec, $('tblH'));
+      host.insertBefore(chip, $('tblH'));
+    }
+  }
+
+  syncUI();
+  recalc();
+  loadThree();
+  setView('3d'); // vaikevaade avamisel = 3D (Junn 03.11)
+  selfTest();
+}
+
+init();
+</script>
+</body>
+</html>
