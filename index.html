@@ -2,7 +2,7 @@
 <html lang="et">
 <head>
 <meta charset="utf-8">
-<title>Kasvuvalguse kalkulaator V3.11</title>
+<title>Kasvuvalguse kalkulaator V3.12</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,7 +22,7 @@
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0c1511; --surface:#131f19; --surface2:#182620; --fg:#e4efe7; --muted:#92a99a; --line:#2a3d32;
+    --bg:#0c1511; --surface:#131f19; --surface2:#182620; --fg:#e4efe7; --muted:#a4bbac; --line:#2a3d32;
     --accent:#5fcf92; --accent-fg:#052112; --accent-soft:#1d3a2b; --field:#0f1913; --danger:#ff8f7a;
     --red:#ee7a66; --blue:#7ea6f2; --green:#7fd36b; --farred:#c4607f; --track:#22332a;
     --shadow:0 1px 3px rgba(0,0,0,.45);
@@ -32,7 +32,7 @@
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0c1511; --surface:#131f19; --surface2:#182620; --fg:#e4efe7; --muted:#92a99a; --line:#2a3d32;
+  --bg:#0c1511; --surface:#131f19; --surface2:#182620; --fg:#e4efe7; --muted:#a4bbac; --line:#2a3d32;
   --accent:#5fcf92; --accent-fg:#052112; --accent-soft:#1d3a2b; --field:#0f1913; --danger:#ff8f7a;
   --red:#ee7a66; --blue:#7ea6f2; --green:#7fd36b; --farred:#c4607f; --track:#22332a;
   --shadow:0 1px 3px rgba(0,0,0,.45);
@@ -56,7 +56,7 @@
 html,body{max-width:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--sans);overflow-x:hidden}
 h1{font-size:1.18rem;margin:0;font-weight:600;letter-spacing:-.01em}
-h2{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px;font-weight:600}
+h2{font-size:.8125rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px;font-weight:600}
 h3{font-size:.85rem;margin:14px 0 6px;font-weight:600}
 .tag{font:500 .72rem var(--mono);background:var(--accent-soft);color:var(--fg);padding:3px 8px;border-radius:3px;white-space:nowrap}
 .hint{font-size:.72rem;color:var(--muted);line-height:1.35;margin:4px 0 0}
@@ -240,7 +240,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
   <div class="topbar">
     <div class="brand">
       <h1>Kasvuvalguse kalkulaator</h1>
-      <span class="tag">V3.11 · 09.11.2026</span>
+      <span class="tag">V3.12 · 09.11.2026</span>
     </div>
     <div class="topact">
       <div class="seg" id="themeSeg" role="group" aria-label="Teema">
@@ -529,7 +529,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
         <div class="rep-head">
           <div>
             <h1>Kasvuvalguse arvutusaruanne</h1>
-            <div class="rep-sub">Kasvuvalguse kalkulaator V3.11 · punktvalgusallikate mudel</div>
+            <div class="rep-sub">Kasvuvalguse kalkulaator V3.12 · punktvalgusallikate mudel</div>
           </div>
           <div class="rep-sub" id="repMeta"></div>
         </div>
@@ -559,7 +559,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
 <script>
 'use strict';
 /* =====================================================================
-   Kasvuvalguse kalkulaator V3.11
+   Kasvuvalguse kalkulaator V3.12
    Grow-light PPFD calculator: point sources + wall mirrors, C0/C90 or IES.
    Light output is given in lm / PPF / µmol/J × W – never derived from watts.
    ===================================================================== */
@@ -2853,4 +2853,4 @@ function init() {
 init();
 </script>
 </body>
-</html>
+</html>
