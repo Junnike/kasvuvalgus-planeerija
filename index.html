@@ -2,7 +2,7 @@
 <html lang="et">
 <head>
 <meta charset="utf-8">
-<title>Kasvuvalguse kalkulaator V3.9</title>
+<title>Kasvuvalguse kalkulaator V3.10</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -240,7 +240,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
   <div class="topbar">
     <div class="brand">
       <h1>Kasvuvalguse kalkulaator</h1>
-      <span class="tag">V3.9 · 09.11.2026</span>
+      <span class="tag">V3.10 · 09.11.2026</span>
     </div>
     <div class="topact">
       <div class="seg" id="themeSeg" role="group" aria-label="Teema">
@@ -527,7 +527,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
         <div class="rep-head">
           <div>
             <h1>Kasvuvalguse arvutusaruanne</h1>
-            <div class="rep-sub">Kasvuvalguse kalkulaator V3.9 · punktvalgusallikate mudel</div>
+            <div class="rep-sub">Kasvuvalguse kalkulaator V3.10 · punktvalgusallikate mudel</div>
           </div>
           <div class="rep-sub" id="repMeta"></div>
         </div>
@@ -557,7 +557,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
 <script>
 'use strict';
 /* =====================================================================
-   Kasvuvalguse kalkulaator V3.9
+   Kasvuvalguse kalkulaator V3.10
    Grow-light PPFD calculator: point sources + wall mirrors, C0/C90 or IES.
    Light output is given in lm / PPF / µmol/J × W – never derived from watts.
    ===================================================================== */
@@ -2740,7 +2740,7 @@ function renderPcb() {
     let ln = L.line;
     if (Math.abs(t.mA - L.mA) > 1e-9) ln += ' (valitud ' + t.mA + ' mA)';
     h += '<p class="hint">' + escH(ln) + '</p>';
-    if (L.note) h += '<div class="note">Allikas: ' + escH(L.src) + ' · ' + escH(L.note) + '</div>';
+    if (L.note) h += '<div class="note">Allikas: ' + (L.note.toLowerCase().startsWith(L.src.toLowerCase()) ? escH(L.note) : escH(L.src) + ' · ' + escH(L.note)) + '</div>';
   });
   $('pcbOut').innerHTML = h;
   renderPcbMatch(res);
