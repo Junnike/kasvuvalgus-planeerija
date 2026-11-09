@@ -2,7 +2,7 @@
 <html lang="et">
 <head>
 <meta charset="utf-8">
-<title>Kasvuvalguse kalkulaator V3.1</title>
+<title>Kasvuvalguse kalkulaator V3.4</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -227,7 +227,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
   <div class="topbar">
     <div class="brand">
       <h1>Kasvuvalguse kalkulaator</h1>
-      <span class="tag">V3.1 · 02.11.2026</span>
+      <span class="tag">V3.4 · 09.11.2026</span>
     </div>
     <div class="topact">
       <div class="seg" id="themeSeg" role="group" aria-label="Teema">
@@ -477,7 +477,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
         <div class="rep-head">
           <div>
             <h1>Kasvuvalguse arvutusaruanne</h1>
-            <div class="rep-sub">Kasvuvalguse kalkulaator V3.1 · punktvalgusallikate mudel</div>
+            <div class="rep-sub">Kasvuvalguse kalkulaator V3.4 · punktvalgusallikate mudel</div>
           </div>
           <div class="rep-sub" id="repMeta"></div>
         </div>
@@ -768,12 +768,13 @@ function computeField(sc) {
   const nx = xs.length, ny = ys.length, npts = nx * ny;
 
   // source decomposition
-  let nSub = fix.len >= 60 ? 3 : 1;
+  let nSub = fix.strip ? Math.max(1, Math.ceil(fix.len / fix.strip)) : (fix.len >= 60 ? 3 : 1);
   let corners = rho > 0;
   const estimate = () => sc.lamps.length * nSub * (corners ? 9 : 1) * npts;
   if (estimate() > 4.5e6) corners = false;
   if (estimate() > 4.5e6 && nSub === 3) nSub = 1;
-  const offs = nSub === 3 ? [-fix.len / 3, 0, fix.len / 3] : [0];
+  const offs = fix.strip ? Array.from({ length: nSub }, (_, i) => -fix.len / 2 + (i + 0.5) * fix.len / nSub)
+    : (nSub === 3 ? [-fix.len / 3, 0, fix.len / 3] : [0]);
   const shareBase = 1 / nSub;
 
   const Ibase = fix.ppf / (IES ? IES.phi : cosNorm(fix.beamC0, fix.beamC90));
@@ -860,13 +861,31 @@ function computeField(sc) {
     dli: avg * sc.hours * 3600 / 1e6,
     frac: totalPPF > 0 ? avg * (W / 100) * (L / 100) / (totalPPF * mf) : 0,
     totalPPF, totalW: sc.lamps.length * fix.watts,
-    reduced: raised || !corners || nSub !== (fix.len >= 60 ? 3 : 1)
+    reduced: raised || !corners || (!fix.strip && nSub !== (fix.len >= 60 ? 3 : 1))
   };
 }
 
 /* =====================================================================
    Parameter reading
    ===================================================================== */
+/** strips run along Pikkus (y axis), evenly spaced across Laius (x), centred */
+function stripGeom(W, L) {
+  const g = id => { const v = $(id).valueAsNumber; return isFinite(v) ? v : 0; };
+  const byTot = $('sqB').checked;
+  let n, runLen, tooLong = false;
+  if (byTot) {
+    n = Math.max(1, Math.round(g('sTot') * 100 / L));
+    runLen = L;
+  } else {
+    n = Math.max(1, Math.round(g('sN')));
+    runLen = g('sLen') * 100;
+    if (runLen > L) { runLen = L; tooLong = true; }
+  }
+  runLen = Math.max(1, runLen);
+  const xs = Array.from({ length: n }, (_, i) => (i + 0.5) * W / n);
+  return { n, runLen, tooLong, xs, byTot };
+}
+
 function readScene() {
   const errs = [];
   const num = (id, name, min, max) => {
@@ -893,11 +912,12 @@ function readScene() {
   const len = num('ll', 'Valgusti pikkus', 1, 400);
   const wid = num('lw', 'Valgusti laius', 1, 400);
   const watts = num('pw', 'Voolutarve', 0, 3000);
-  const mode = $('mode').value === 'strip' ? 'ppf' : $('mode').value;
+  const isStrip = $('mode').value === 'strip';
+  const mode = isStrip ? 'ppf' : $('mode').value;
   const cctRaw = $('cct').value;
   const cct = cctRaw === 'x' ? num('cctx', 'Värvustemperatuur', 2200, 7000) : +cctRaw;
   const cri = +$('cri').value;
-  const IES = state.ies;
+  const IES = isStrip ? null : state.ies;
   const sp = whiteSpectrum(cct, cri);
 
   let sh, ppf, lm = null, f = null;
@@ -919,21 +939,34 @@ function readScene() {
     sh = { b: b / tot, g: g / tot, r: r / tot, fr: fr / 100 };
     ppf = num('ppf', 'PPF', 1, 100000);
   }
+  let sg = null;
+  if (isStrip) {
+    sg = stripGeom(W, L);
+    sh = { b: .15, g: .25, r: .58, fr: .02 }; // valge + 660 nm riba, ligikaudne spekter
+    const wm = Math.max(0.1, $('sW').valueAsNumber || 0), eff = Math.max(0.1, $('sEff').valueAsNumber || 0);
+    ppf = wm * eff * sg.runLen / 100; // ühe riba PPF
+    var stripWatts = wm * sg.runLen / 100;
+  }
   const lmw = (lm != null && watts > 0) ? lm / watts : null;
 
   /* beams */
-  const beamC0 = IES ? 120 : num('beamC0', 'Poolväärtusnurk C0', 10, 179);
-  const beamC90 = IES ? 120 : num('beamC90', 'Poolväärtusnurk C90', 10, 179);
+  const beamC0 = isStrip ? 120 : IES ? 120 : num('beamC0', 'Poolväärtusnurk C0', 10, 179);
+  const beamC90 = isStrip ? 120 : IES ? 120 : num('beamC90', 'Poolväärtusnurk C90', 10, 179);
 
   /* placement */
   const rows = Math.round(num('rows', 'Ridu', 1, 20));
   const cols = Math.round(num('cols', 'Veerge', 1, 20));
-  if (state.layout === 'auto') state.lamps = autoLamps(W, L, rows, cols);
-  if (!state.lamps.length) errs.push('vähemalt üks valgusti');
-  state.lamps.forEach(l => {
-    l.x = Math.min(W, Math.max(0, l.x));
-    l.y = Math.min(L, Math.max(0, l.y));
-  });
+  let useLamps = state.lamps;
+  if (isStrip) useLamps = sg.xs.map(x => ({ x, y: L / 2, rot: 0 }));
+  else {
+    if (state.layout === 'auto') state.lamps = autoLamps(W, L, rows, cols);
+    if (!state.lamps.length) errs.push('vähemalt üks valgusti');
+    state.lamps.forEach(l => {
+      l.x = Math.min(W, Math.max(0, l.x));
+      l.y = Math.min(L, Math.max(0, l.y));
+    });
+    useLamps = state.lamps;
+  }
 
   const presetName = $('preset').selectedOptions[0] ? $('preset').selectedOptions[0].textContent : '';
 
@@ -941,10 +974,11 @@ function readScene() {
     errs,
     sc: {
       W, L, roomH, mount, plane, h, step, rho, mf, hours,
-      ori: $('ori').value,
+      ori: isStrip ? 'y' : $('ori').value, strip: sg,
       rows, cols,
-      lamps: state.lamps.map(l => ({ x: l.x, y: l.y, rot: l.rot || 0 })),
-      fix: { len, wid, watts, lm, lmw, ppf, f, sh, beamC0, beamC90, ies: IES, mode, label: presetName }
+      lamps: useLamps.map(l => ({ x: l.x, y: l.y, rot: l.rot || 0 })),
+      fix: isStrip ? { len: sg.runLen, wid: Math.max(0.1, ($('sWid').valueAsNumber || 12) / 10), watts: stripWatts, lm: null, lmw: null, ppf, f: null, sh, beamC0, beamC90, ies: null, mode: 'ppf', label: 'LED-riba', strip: 5 } :
+      { len, wid, watts, lm, lmw, ppf, f, sh, beamC0, beamC90, ies: IES, mode, label: presetName }
     }
   };
 }
@@ -1094,7 +1128,7 @@ function renderCalcInfo() {
   const rows = [
     ['Võrgu suurus', r.nx + ' × ' + r.ny + ' = ' + fmtI(r.npts) + ' punkti'],
     ['Mõõteala tihedus', fmt(r.sp, r.sp % 1 ? 1 : 0) + ' cm' + (r.raised ? ' (automaatselt suurendatud)' : '')],
-    ['Valgusteid', sc.lamps.length + ' tk, allikaid kokku ' + (sc.lamps.length * (sc.fix.len >= 60 ? 3 : 1)) + ' + peegeldused'],
+    ['Valgusteid', sc.lamps.length + ' tk, allikaid kokku ' + (sc.lamps.length * (sc.fix.strip ? Math.max(1, Math.ceil(sc.fix.len / sc.fix.strip)) : (sc.fix.len >= 60 ? 3 : 1))) + ' + peegeldused'],
     ['Peegeldused', sc.rho > 0 ? '1. järk + nurgad (2. järk), ρ = ' + fmt(sc.rho * 100) + ' %' : 'väljas (ρ = 0)'],
     ['Hooldetegur', fmt(sc.mf, 2)],
     ['Arvutusaeg', fmt(state.calcMs, 0) + ' ms']
@@ -1603,12 +1637,13 @@ function build3D() {
   const hM = sc.h / 100;
   const yLamp = planeH + hM;
   const lenM = sc.fix.len / 100, widM = sc.fix.wid / 100;
-  const boxMat = new THREE.MeshStandardMaterial({ color: 0xf2f6f3, emissive: 0xdfe9e2, emissiveIntensity: 0.6, roughness: 0.6 });
+  const boxMat = sc.strip ? new THREE.MeshStandardMaterial({ color: 0xffd9e4, emissive: 0xffb6c9, emissiveIntensity: 0.7, roughness: 0.6 })
+    : new THREE.MeshStandardMaterial({ color: 0xf2f6f3, emissive: 0xdfe9e2, emissiveIntensity: 0.6, roughness: 0.6 });
   const wireMat = new THREE.MeshBasicMaterial({ color: 0x1c7a4a, wireframe: true, transparent: true, opacity: 0.35 });
 
   sc.lamps.forEach(lamp => {
     const base = (sc.ori === 'x' ? 0 : Math.PI / 2) + (lamp.rot ? Math.PI / 2 : 0);
-    const bx = new THREE.Mesh(new THREE.BoxGeometry(lenM, 0.03, widM), boxMat);
+    const bx = new THREE.Mesh(new THREE.BoxGeometry(lenM, sc.strip ? 0.012 : 0.03, widM), boxMat);
     bx.position.set(lamp.x / 100 - W / 2, yLamp, lamp.y / 100 - L / 2);
     bx.rotation.y = -base;
     g.add(bx);
@@ -1619,7 +1654,7 @@ function build3D() {
     const cone = new THREE.Mesh(new THREE.ConeGeometry(rad, hM, 20, 1, true), wireMat);
     cone.geometry.translate(0, -hM / 2, 0);
     cone.position.set(bx.position.x, yLamp, bx.position.z);
-    g.add(cone);
+    if (!sc.strip) g.add(cone);
   });
 
   if (!T3.fitted) {
@@ -1786,7 +1821,13 @@ function renderStripMode() {
     ['Ülejääk', fmt(spare, 2) + ' V'],
     ['Kadu grupis (takisti / lineaarregulaatori soojus)', fmt(loss, 1) + ' %']
   ];
-  $('stripOut').innerHTML = rows.map(r => '<div style="display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding:3px 0"><span>' + r[0] + '</span><b>' + r[1] + '</b></div>').join('');
+  const sg = stripGeom(g('w'), g('l'));
+  rows.unshift(['Ribasid alal', sg.n + ' tk × ' + fmt(sg.runLen / 100, 2) + ' m (kokku ' + fmt(sg.n * sg.runLen / 100, 2) + ' m)']);
+  if (sg.tooLong) rows.unshift(['<span style="color:#e5484d">riba pikem kui ala</span>', '<span style="color:#e5484d">piiratud ' + fmt(sg.runLen / 100, 2) + ' m</span>']);
+  const rs = state.result;
+  const simTxt = (rs && state.scene && state.scene.strip)
+    ? '<div style="color:var(--muted,#8a8f98);font-size:.8rem;padding-top:4px">lihtne arvutus: ' + fmt(ppfd, 1) + ' µmol/m²/s' + (sg.tooLong ? ' (lõigatud pikkusega ' + fmt(ppfd * sg.n * sg.runLen / 100 / (totM || 1), 1) + ')' : '') + ' · simulatsioon: ' + fmt(rs.avg, 1) + ' µmol/m²/s (Ø, ilma kasutusteguri, 120° kiirgus, seinapeegeldus ' + fmt((state.scene.rho || 0) * 100) + ' %)</div>' : '';
+  $('stripOut').innerHTML = rows.map(r => '<div style="display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding:3px 0"><span>' + r[0] + '</span><b>' + r[1] + '</b></div>').join('') + simTxt;
 }
 
 function recalc() {
