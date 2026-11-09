@@ -2,7 +2,7 @@
 <html lang="et">
 <head>
 <meta charset="utf-8">
-<title>Kasvuvalguse kalkulaator V3.4</title>
+<title>Kasvuvalguse kalkulaator V3.5</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -219,6 +219,18 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
   .a4{box-shadow:none;width:auto;max-width:none;padding:0;border-radius:0}
   .a4 table{page-break-inside:avoid}
 }
+.pcbrow{display:grid;grid-template-columns:minmax(0,1.7fr) auto minmax(0,.8fr) minmax(0,.8fr) minmax(0,.9fr) auto;gap:6px;align-items:start;padding:5px 0;border-bottom:1px solid var(--line)}
+.pcbrow.hd{font-size:.68rem;color:var(--muted);align-items:end;padding-bottom:3px}
+.pcbrow input[type=number]{padding:4px 5px;font-size:.82rem}
+.pcbnm{font-size:.8rem;line-height:1.25;min-width:0;overflow-wrap:anywhere}
+.pcbnm small{display:block;font-size:.66rem;color:var(--muted)}
+.pcbcnt{display:flex;align-items:center;gap:4px;font:600 .85rem var(--mono)}
+.pcbcnt span{min-width:22px;text-align:center}
+.pcbtag{display:block;font-size:.6rem;color:var(--muted);font-style:italic}
+.pcbdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;flex:none;border:1px solid var(--line)}
+.grey{font-size:.68rem;color:var(--muted)}
+.pcbtxt{width:100%;font:500 .92rem var(--mono);color:var(--fg);background:var(--field);border:1px solid var(--line);border-radius:4px;padding:6px 8px;min-width:0}
+@media (max-width:560px){.pcbrow{grid-template-columns:minmax(0,1fr) auto auto}.pcbrow.hd{display:none}}
 </style>
 </head>
 <body>
@@ -227,7 +239,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
   <div class="topbar">
     <div class="brand">
       <h1>Kasvuvalguse kalkulaator</h1>
-      <span class="tag">V3.4 · 09.11.2026</span>
+      <span class="tag">V3.5 · 09.11.2026</span>
     </div>
     <div class="topact">
       <div class="seg" id="themeSeg" role="group" aria-label="Teema">
@@ -287,7 +299,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
         <label class="f" for="ll">Pikkus (cm)<input type="number" id="ll" value="120" min="1" max="400" step="1" inputmode="decimal"></label>
         <label class="f" for="lw">Laius (cm)<input type="number" id="lw" value="7" min="1" max="400" step="1" inputmode="decimal"></label>
         <label class="f" for="pw">Voolutarve (W)<input type="number" id="pw" value="40" min="0" max="3000" step="1" inputmode="decimal">
-          <small class="hint">ainult elektrikulu – valgus ei tuletata vattidest</small></label>
+          <small class="hint">tootja nimivõimsus; valgust vattidest ei tuletata</small></label>
         <label class="f" for="cct">Värvustemperatuur (K)
           <select id="cct"><option>2700</option><option>3000</option><option>3500</option><option>4000</option>
             <option>5000</option><option>5700</option><option>6000</option><option>6500</option><option value="x">muu</option></select></label>
@@ -303,6 +315,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
           <option value="lm" selected>Valgusvoog (lm) + CCT/Ra</option>
           <option value="ppf">PPF (µmol/s)</option>
           <option value="strip">LED-riba</option>
+          <option value="pcb">LED-plaat (koosta ise)</option>
         </select>
       </label>
       <div class="grid2" style="margin-top:8px">
@@ -347,6 +360,36 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
         <div class="sub">LED-riba tulemus</div>
         <div id="stripOut" style="display:grid;gap:2px;font:500 .85rem var(--mono)"></div>
         <p class="hint">Pindala võetakse sammust 1 (Pikkus × Laius). PPFD keskmine = PPF × kasutustegur × MF / pindala.</p>
+      </div>
+      <div id="pcbBlock" hidden>
+        <div class="sub">LED-plaat (koosta ise)</div>
+        <div class="grid2">
+          <label class="f" for="pcbW">Plaadi laius (mm)<input type="number" id="pcbW" value="50" min="10" max="2000" step="1" inputmode="decimal"></label>
+          <label class="f" for="pcbH">Plaadi kõrgus (mm)<input type="number" id="pcbH" value="50" min="10" max="2000" step="1" inputmode="decimal"></label>
+        </div>
+        <div id="pcbRows" style="margin-top:8px"></div>
+        <div class="sub">Lisa valge LED</div>
+        <div class="grid2">
+          <label class="f" for="pcbK">Kelvin (1800–6500)<input type="text" id="pcbK" class="pcbtxt" value="4000" inputmode="numeric" autocomplete="off"></label>
+          <label class="f" for="pcbCri">CRI<select id="pcbCri"><option value="70">70</option><option value="80" selected>80</option><option value="90">90</option></select></label>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+          <button type="button" class="mini" id="pcbAddWhite">Lisa valge</button>
+          <button type="button" class="mini" id="pcbAdd450">Lisa 450</button>
+          <button type="button" class="mini" id="pcbAdd660">Lisa 660</button>
+          <button type="button" class="mini" id="pcbAdd730">Lisa 730</button>
+        </div>
+        <p class="hint" id="pcbMsg" hidden></p>
+        <div class="sub">Taim ja etapp</div>
+        <div class="grid2">
+          <label class="f" for="pcbPlant">Taim<select id="pcbPlant"></select></label>
+          <label class="f" for="pcbStage">Etapp<select id="pcbStage"></select></label>
+          <label class="f" for="pcbHours">Valgusaeg (h)<input type="number" id="pcbHours" value="16" min="0" max="24" step="0.5" inputmode="decimal"><small class="hint" id="pcbHoursNote"></small></label>
+        </div>
+        <div id="pcbSvg"></div>
+        <div id="pcbOut" style="display:grid;gap:2px;font:500 .85rem var(--mono)"></div>
+        <div class="sub">Sobivus taimega</div>
+        <div id="pcbMatch" style="font-size:.82rem"></div>
       </div>
       <div id="shBox" hidden>
         <div class="grid2">
@@ -477,7 +520,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
         <div class="rep-head">
           <div>
             <h1>Kasvuvalguse arvutusaruanne</h1>
-            <div class="rep-sub">Kasvuvalguse kalkulaator V3.4 · punktvalgusallikate mudel</div>
+            <div class="rep-sub">Kasvuvalguse kalkulaator V3.5 · punktvalgusallikate mudel</div>
           </div>
           <div class="rep-sub" id="repMeta"></div>
         </div>
@@ -507,7 +550,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
 <script>
 'use strict';
 /* =====================================================================
-   Kasvuvalguse kalkulaator V3.1
+   Kasvuvalguse kalkulaator V3.5
    Grow-light PPFD calculator: point sources + wall mirrors, C0/C90 or IES.
    Light output is given in lm / PPF / µmol/J × W – never derived from watts.
    ===================================================================== */
@@ -606,6 +649,174 @@ function whiteSpectrum(cct, cri) {
   const R = Math.max(0, Math.min(v[3], 58) + c[1]), S = B + G + R || 1;
   return { f, b: B / S, g: G / S, r: R / S, fr: Math.max(0, v[4] + c[4]) / 100 };
 }
+
+/*PCB-BEGIN*/
+const CMF_X=[0.001368, 0.002236, 0.004243, 0.00765, 0.01431, 0.02319, 0.04351, 0.07763, 0.13438, 0.21477, 0.2839, 0.3285, 0.34828, 0.34806, 0.3362, 0.3187, 0.2908, 0.2511, 0.19536, 0.1421, 0.09564, 0.05795, 0.03201, 0.0147, 0.0049, 0.0024, 0.0093, 0.0291, 0.06327, 0.1096, 0.1655, 0.22575, 0.2904, 0.3597, 0.43345, 0.51205, 0.5945, 0.6784, 0.7621, 0.8425, 0.9163, 0.9786, 1.0263, 1.0567, 1.0622, 1.0456, 1.0026, 0.9384, 0.85445, 0.7514, 0.6424, 0.5419, 0.4479, 0.3608, 0.2835, 0.2187, 0.1649, 0.1212, 0.0874, 0.0636, 0.04677, 0.0329, 0.0227, 0.01584, 0.011359, 0.008111, 0.00579, 0.004109, 0.002899, 0.002049, 0.00144, 0.001, 0.00069, 0.000476, 0.000332, 0.000235, 0.000166, 0.000117, 8.3e-05, 5.9e-05, 4.2e-05],CMF_Y=[3.9e-05, 6.4e-05, 0.00012, 0.000217, 0.000396, 0.00064, 0.00121, 0.00218, 0.004, 0.0073, 0.0116, 0.01684, 0.023, 0.0298, 0.038, 0.048, 0.06, 0.0739, 0.09098, 0.1126, 0.13902, 0.1693, 0.20802, 0.2586, 0.323, 0.4073, 0.503, 0.6082, 0.71, 0.7932, 0.862, 0.91485, 0.954, 0.9803, 0.99495, 1.0, 0.995, 0.9786, 0.952, 0.9154, 0.87, 0.8163, 0.757, 0.6949, 0.631, 0.5668, 0.503, 0.4412, 0.381, 0.321, 0.265, 0.217, 0.175, 0.1382, 0.107, 0.0816, 0.061, 0.04458, 0.032, 0.0232, 0.017, 0.01192, 0.00821, 0.005723, 0.004102, 0.002929, 0.002091, 0.001484, 0.001047, 0.00074, 0.00052, 0.000361, 0.000249, 0.000172, 0.00012, 8.5e-05, 6e-05, 4.2e-05, 3e-05, 2.1e-05, 1.5e-05],CMF_Z=[0.00645, 0.01055, 0.02005, 0.03621, 0.06785, 0.1102, 0.2074, 0.3713, 0.6456, 1.03905, 1.3856, 1.62296, 1.74706, 1.7826, 1.77211, 1.7441, 1.6692, 1.5281, 1.28764, 1.0419, 0.81295, 0.6162, 0.46518, 0.3533, 0.272, 0.2123, 0.1582, 0.1117, 0.07825, 0.05725, 0.04216, 0.02984, 0.0203, 0.0134, 0.00875, 0.00575, 0.0039, 0.00275, 0.0021, 0.0018, 0.00165, 0.0014, 0.0011, 0.001, 0.0008, 0.0006, 0.00034, 0.00024, 0.00019, 0.0001, 5e-05, 3e-05, 2e-05, 1e-05, -0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+const SPD_KING=[0.0, 0.0, 0.0, 0.0, 0.000232, 0.000235, 0.000238, 0.000301, 0.000365, 0.000585, 0.00081, 0.001671, 0.002551, 0.005804, 0.00913, 0.008572, 0.008, 0.007211, 0.006403, 0.005782, 0.005148, 0.00608, 0.00703, 0.008357, 0.00971, 0.010722, 0.011752, 0.012725, 0.013716, 0.014304, 0.014901, 0.015623, 0.016356, 0.017258, 0.018173, 0.019223, 0.020289, 0.021658, 0.023047, 0.024333, 0.025637, 0.026918, 0.028217, 0.029232, 0.03026, 0.033669, 0.037129, 0.035161, 0.033156, 0.053712, 0.074594, 0.049694, 0.024394, 0.022387, 0.020347, 0.017941, 0.015495, 0.01383, 0.012137, 0.010418, 0.008672, 0.007644, 0.0066, 0.005691, 0.004768, 0.00424, 0.003704, 0.00316, 0.002609, 0.002312, 0.00201, 0.001758, 0.001501, 0.001404, 0.001304, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+const SPD_WARM=[0.000163, 0.000145, 0.00014, 0.000154, 0.000185, 0.000251, 0.000374, 0.000562, 0.000873, 0.001341, 0.002022, 0.002991, 0.004485, 0.006183, 0.006785, 0.005959, 0.005089, 0.004598, 0.004156, 0.004064, 0.004432, 0.005157, 0.006173, 0.007396, 0.00863, 0.009828, 0.010912, 0.011858, 0.012726, 0.013539, 0.014271, 0.015157, 0.01611, 0.017138, 0.018339, 0.019716, 0.021359, 0.02321, 0.025212, 0.027334, 0.029498, 0.031533, 0.033402, 0.034836, 0.035938, 0.036434, 0.036536, 0.036099, 0.035179, 0.033953, 0.032247, 0.030333, 0.028172, 0.026031, 0.023786, 0.021571, 0.019459, 0.01745, 0.015528, 0.013724, 0.012095, 0.010627, 0.009314, 0.00816, 0.007092, 0.00622, 0.005395, 0.004712, 0.004099, 0.003542, 0.003087, 0.002686, 0.00234, 0.002055, 0.001777, 0.001564, 0.001358, 0.001188, 0.001031, 0.000929, 0.0],SPD_NEUTRAL=[0.000238, 0.000235, 0.000226, 0.000248, 0.000303, 0.000433, 0.000688, 0.001181, 0.002077, 0.003626, 0.006128, 0.009666, 0.015071, 0.021371, 0.023117, 0.018298, 0.0134, 0.0104, 0.008015, 0.006591, 0.006281, 0.0067, 0.007738, 0.009337, 0.01114, 0.012953, 0.01454, 0.016006, 0.017232, 0.018246, 0.019121, 0.019948, 0.020733, 0.021545, 0.022418, 0.023318, 0.024259, 0.025324, 0.026339, 0.027339, 0.028316, 0.029058, 0.029707, 0.030028, 0.030012, 0.029635, 0.029002, 0.028169, 0.026952, 0.025595, 0.023907, 0.022255, 0.020415, 0.01859, 0.016783, 0.015124, 0.013523, 0.012005, 0.010584, 0.009278, 0.008135, 0.007124, 0.006189, 0.005398, 0.004709, 0.00408, 0.003553, 0.003071, 0.002668, 0.002325, 0.002002, 0.001773, 0.001545, 0.001359, 0.0012, 0.001042, 0.000905, 0.000806, 0.000719, 0.000633, 0.0],SPD_COOL=[0.000332, 0.000329, 0.000317, 0.000332, 0.000381, 0.000498, 0.000717, 0.001237, 0.00225, 0.004234, 0.007801, 0.013736, 0.023314, 0.03452, 0.036425, 0.026377, 0.018128, 0.013744, 0.010469, 0.008955, 0.009268, 0.010467, 0.012204, 0.014247, 0.016144, 0.017503, 0.018495, 0.019281, 0.019896, 0.020439, 0.02095, 0.021562, 0.022291, 0.023006, 0.023655, 0.024183, 0.02481, 0.025282, 0.025623, 0.025901, 0.026093, 0.026175, 0.0261, 0.025831, 0.025295, 0.024456, 0.023519, 0.022424, 0.021111, 0.019782, 0.018206, 0.016708, 0.015116, 0.01361, 0.01223, 0.010862, 0.009624, 0.008492, 0.00742, 0.006487, 0.005648, 0.004917, 0.004266, 0.00371, 0.003206, 0.00279, 0.002414, 0.002108, 0.00184, 0.001618, 0.001406, 0.001236, 0.001091, 0.000967, 0.00086, 0.000752, 0.000679, 0.000602, 0.00055, 0.000492, 0.0];
+const LAM = Array.from({ length: 81 }, (_, i) => 380 + 5 * i);
+const sumA = a => a.reduce((s, v) => s + v, 0);
+const normA = a => { const s = sumA(a) || 1; return a.map(v => v / s); };
+const gaussA = (c, fw) => { const s = fw / 2.3548; return normA(LAM.map(l => Math.exp(-0.5 * Math.pow((l - c) / s, 2)))); };
+/* osa footonitest 400-750 nm vahemikus [lo,hi); iga ruudustiku punkt katab +-2,5 nm */
+function bandShare(spd, lo, hi) {
+  let s = 0, t = 0;
+  LAM.forEach((l, i) => {
+    const ov = (a, b) => Math.max(0, Math.min(l + 2.5, b) - Math.max(l - 2.5, a)) / 5;
+    s += spd[i] * ov(lo, hi);
+    t += spd[i] * ov(400, 750);
+  });
+  return t > 0 ? s / t : 0;
+}
+function xyOf(spd) {
+  let X = 0, Y = 0, Z = 0;
+  LAM.forEach((l, i) => { const e = spd[i] / l; X += e * CMF_X[i]; Y += e * CMF_Y[i]; Z += e * CMF_Z[i]; });
+  const S = X + Y + Z || 1;
+  return { x: X / S, y: Y / S, X, Y, Z };
+}
+function mccamy(x, y) {
+  const n = (x - 0.3320) / (0.1858 - y);
+  return 449 * n * n * n + 3525 * n * n + 6823.3 * n + 5520.33;
+}
+let _planck = null;
+function planckTable() {
+  if (_planck) return _planck;
+  _planck = [];
+  for (let k = 0; k <= 2400; k++) {
+    const T = 1000 * Math.pow(25, k / 2400);
+    let X = 0, Y = 0, Z = 0;
+    LAM.forEach((l, i) => { const e = Math.pow(l, -5) / (Math.exp(1.4388e7 / (l * T)) - 1); X += e * CMF_X[i]; Y += e * CMF_Y[i]; Z += e * CMF_Z[i]; });
+    const d = X + 15 * Y + 3 * Z;
+    _planck.push({ T, u: 4 * X / d, v: 6 * Y / d });
+  }
+  return _planck;
+}
+/* Duv: märgiga kaugus lähimast Plancki punktist (u,v) tasandil; ligikaudne */
+function duvOf(c) {
+  const d = c.X + 15 * c.Y + 3 * c.Z, u = 4 * c.X / d, v = 6 * c.Y / d;
+  let best = null, bd = Infinity;
+  planckTable().forEach(p => { const q = Math.hypot(u - p.u, v - p.v); if (q < bd) { bd = q; best = p; } });
+  return (v >= best.v ? 1 : -1) * bd;
+}
+
+/* ---------- modelleeritud valge (1800..6500 K, CRI 70/80/90) ---------- */
+const WHITE_W = { 70: 100, 80: 110, 90: 120 };
+const _wc = {};
+function modelWhite(K, cri) {
+  K = Math.min(6500, Math.max(1800, K));
+  const key = K + '/' + cri;
+  if (_wc[key]) return _wc[key];
+  const c = 600 - 30 * (K - 1800) / 4700, w = WHITE_W[cri] || 110;
+  const bl = gaussA(450, 20);
+  let ph = gaussA(c, w);
+  if (cri === 90) { const rd = gaussA(630, 25); ph = normA(ph.map((v, i) => v + 0.25 * rd[i])); }
+  const mix = s => bl.map((v, i) => s * v + (1 - s) * ph[i]);
+  const cct = s => { const xy = xyOf(mix(s)); return mccamy(xy.x, xy.y); };
+  let lo = 0.0005, hi = 0.99;
+  for (let it = 0; it < 60; it++) { const m = (lo + hi) / 2; if (cct(m) < K) lo = m; else hi = m; }
+  const s = (lo + hi) / 2;
+  return (_wc[key] = { spd: mix(s), s, cct: cct(s) });
+}
+const SH_PPE = [[2700, 2.3], [3000, 2.5], [3500, 2.5], [4000, 2.6], [5000, 2.6], [5700, 2.6], [6500, 2.6]];
+function ppeModel(K, cri) {
+  let v = SH_PPE[SH_PPE.length - 1][1];
+  if (K <= SH_PPE[0][0]) v = SH_PPE[0][1];
+  else for (let i = 0; i < SH_PPE.length - 1; i++) {
+    const a = SH_PPE[i], b = SH_PPE[i + 1];
+    if (K >= a[0] && K <= b[0]) { v = a[1] + (b[1] - a[1]) * (K - a[0]) / (b[0] - a[0]); break; }
+  }
+  return v * (cri === 70 ? 0.97 : cri === 90 ? 1.06 : 1);
+}
+
+/* ---------- LED-teek ---------- */
+const SH_CODE = 'Shineon 2835A03-xxH05-2P-F19-EC-LX';
+const SH_CURVE = { 2700: SPD_WARM, 3000: SPD_WARM, 3500: SPD_NEUTRAL, 4000: SPD_NEUTRAL, 5000: SPD_COOL, 5700: SPD_COOL, 6500: SPD_COOL };
+const LEDS = {
+  kinghood_2700_cri90: {
+    id: 'kinghood_2700_cri90', name: 'Kinghood 2700K CRI90', src: 'mõõdetud', cct: 2700, cri: 90,
+    umolJ: 2.74, vf: 3.0, mA: 60, spd: SPD_KING, assumed: ['vf', 'mA'],
+    note: 'PPE on riba tase (27,96 µmol/s / 10,196 W); Vf ja mA eeldus',
+    line: '2700K alus: Kinghood 2700K CRI90, Everfine 07.07.2026, 2,74 µmol/J mõõdetud (riba tase); Vf ja mA eeldus'
+  },
+  mono_450: {
+    id: 'mono_450', name: '450 nm sinine', src: 'mudel', spd: gaussA(450, 20),
+    umolJ: 2.5, vf: 3.0, mA: 150, assumed: ['vf', 'mA', 'umolJ'],
+    note: 'mudel (Gauss 450 nm, FWHM 20); Vf, mA ja PPE eeldus',
+    line: '450 nm alus: mudel (Gauss 450 nm, FWHM 20); Vf, mA ja PPE eeldus; hinnanguline'
+  },
+  shineon_660: {
+    id: 'shineon_660', name: '660 nm punane', src: 'andmeleht', spd: gaussA(660, 20),
+    umolJ: 2.49, vf: 2.1, mA: 150, assumed: ['vf', 'umolJ'],
+    note: 'Shineon SOW2835-PL-R660-E, andmeleht 150 mA; Vf (vahemik 1,8-2,4 V, keskmine 2,1) ja PPE 2,49 eeldus; spekter Gauss 660 nm FWHM 20',
+    line: '660 nm alus: Shineon SOW2835-PL-R660-E, 150 mA andmeleht; Vf ja PPE eeldus, spekter mudel; hinnanguline'
+  },
+  mono_730: {
+    id: 'mono_730', name: '730 nm sügavpunane', src: 'mudel', spd: gaussA(730, 25),
+    umolJ: 2.5, vf: 2.0, mA: 150, assumed: ['vf', 'mA', 'umolJ'],
+    note: 'mudel (Gauss 730 nm, FWHM 25); Vf, mA ja PPE eeldus',
+    line: '730 nm alus: mudel (Gauss 730 nm, FWHM 25); Vf, mA ja PPE eeldus; hinnanguline'
+  }
+};
+SH_PPE.forEach(([k, p]) => {
+  LEDS['shineon_2835a03_' + k] = {
+    id: 'shineon_2835a03_' + k, name: 'Shineon 2835 ' + k + 'K CRI80', src: 'andmeleht', cct: k, cri: 80,
+    umolJ: p, vf: 2.9, mA: 150, spd: SH_CURVE[k], assumed: ['vf'],
+    note: 'andmeleht 150 mA; Vf 2,8-3,0 V (keskmine 2,9 eeldus); PPE hinnang ±10 %; spekter 3 kõverast (soe/neutraalne/jahe), ±5 pp',
+    line: k + 'K alus: ' + SH_CODE + ', CRI80, 150 mA andmeleht; hinnanguline ±10 %'
+  };
+});
+function resolveWhite(K, cri) {
+  K = Math.min(6500, Math.max(1800, K));
+  if (cri === 90 && Math.abs(K - 2700) <= 100) return LEDS.kinghood_2700_cri90;
+  if (cri === 80) {
+    let hit = null;
+    SH_PPE.forEach(([c]) => { if (Math.abs(K - c) <= 100 && (hit === null || Math.abs(K - c) < Math.abs(K - hit))) hit = c; });
+    if (hit !== null) return LEDS['shineon_2835a03_' + hit];
+  }
+  return modelLED(K, cri);
+}
+function modelLED(K, cri) {
+  K = Math.min(6500, Math.max(1800, K));
+  const m = modelWhite(K, cri);
+  return {
+    id: 'mudel_' + K + '_' + cri, name: 'Valge ' + K + 'K CRI' + cri + ' (mudel)', src: 'mudel', cct: K, cri,
+    umolJ: ppeModel(K, cri), vf: 3.0, mA: 150, spd: m.spd, assumed: ['vf', 'mA', 'umolJ'],
+    note: 'mudel: sinine Gauss 450 nm + fosfor; PPE Shineoni tabelist, Vf ja mA eeldus',
+    line: K + 'K alus: mudel (sinine Gauss 450 nm + fosfor, CRI' + cri + '); PPE Shineoni tabelist, Vf ja mA eeldus; hinnanguline'
+  };
+}
+
+/* ---------- PCB olek + segu ---------- */
+const pcb = { w: 50, h: 50, types: [], uid: 0, plant: '', stage: 'kasv', hours: null };
+function pcbLib(t) {
+  if (t.kind === 'white') return t.model ? modelLED(t.K, t.cri) : resolveWhite(t.K, t.cri);
+  return t.kind === '450' ? LEDS.mono_450 : t.kind === '660' ? LEDS.shineon_660 : LEDS.mono_730;
+}
+function pcbAdd(kind, K, cri, n) {
+  const t = { uid: ++pcb.uid, kind, K: K || 0, cri: cri || 0, n: n || 1 };
+  const L = pcbLib(t);
+  t.mA = L.mA; t.vf = L.vf; t.ppe = L.umolJ;
+  pcb.types.push(t);
+  return t;
+}
+function pcbMix(types) {
+  const spd = new Array(81).fill(0);
+  let W = 0, PPF = 0;
+  types.forEach(t => {
+    const L = pcbLib(t), wt = t.n * t.vf * t.mA / 1000, p = wt * t.ppe;
+    W += wt; PPF += p;
+    for (let i = 0; i < 81; i++) spd[i] += p * L.spd[i];
+  });
+  if (!(W > 0) || !(PPF > 0)) return { ok: false, W, PPF };
+  const tot = sumA(spd), n = spd.map(v => v / tot);
+  const c = xyOf(n);
+  return {
+    ok: true, W, PPF, ppe: PPF / W, spd: n,
+    b: bandShare(n, 400, 500), g: bandShare(n, 500, 600), r: bandShare(n, 600, 700), fr: bandShare(n, 700, 750), z: bandShare(n, 640, 680),
+    x: c.x, y: c.y, cct: mccamy(c.x, c.y), duv: duvOf(c)
+  };
+}
+/*PCB-END*/
 
 /* ---------------- grid axis ---------------- */
 function axis(len, step) {
@@ -909,15 +1120,23 @@ function readScene() {
   const hours = num('hours', 'Töötunnid', 0, 24);
 
   /* luminaire */
-  const len = num('ll', 'Valgusti pikkus', 1, 400);
-  const wid = num('lw', 'Valgusti laius', 1, 400);
-  const watts = num('pw', 'Voolutarve', 0, 3000);
+  let len = num('ll', 'Valgusti pikkus', 1, 400);
+  let wid = num('lw', 'Valgusti laius', 1, 400);
+  let watts = num('pw', 'Voolutarve', 0, 3000);
   const isStrip = $('mode').value === 'strip';
-  const mode = isStrip ? 'ppf' : $('mode').value;
+  const isPcb = $('mode').value === 'pcb';
+  const mode = (isStrip || isPcb) ? 'ppf' : $('mode').value;
+  let PM = null;
+  if (isPcb) {
+    len = num('pcbW', 'PCB laius', 10, 2000) / 10;
+    wid = num('pcbH', 'PCB kõrgus', 10, 2000) / 10;
+    PM = pcbMix(pcb.types);
+    watts = PM.ok ? PM.W : 0;
+  }
   const cctRaw = $('cct').value;
   const cct = cctRaw === 'x' ? num('cctx', 'Värvustemperatuur', 2200, 7000) : +cctRaw;
   const cri = +$('cri').value;
-  const IES = isStrip ? null : state.ies;
+  const IES = (isStrip || isPcb) ? null : state.ies;
   const sp = whiteSpectrum(cct, cri);
 
   let sh, ppf, lm = null, f = null;
@@ -938,6 +1157,17 @@ function readScene() {
     if (tot <= 0) { errs.push('spektri osakaalud on nullid'); b = 15; g = 20; r = 65; tot = 100; }
     sh = { b: b / tot, g: g / tot, r: r / tot, fr: fr / 100 };
     ppf = num('ppf', 'PPF', 1, 100000);
+  }
+  if (isPcb) {
+    if (PM.ok) {
+      const pt = PM.b + PM.g + PM.r;
+      sh = { b: PM.b / pt, g: PM.g / pt, r: PM.r / pt, fr: PM.fr / pt };
+      ppf = PM.PPF;
+    } else {
+      errs.push('lisa vähemalt üks LED');
+      sh = { b: .15, g: .25, r: .6, fr: 0 };
+      ppf = 1;
+    }
   }
   let sg = null;
   if (isStrip) {
@@ -978,7 +1208,7 @@ function readScene() {
       rows, cols,
       lamps: useLamps.map(l => ({ x: l.x, y: l.y, rot: l.rot || 0 })),
       fix: isStrip ? { len: sg.runLen, wid: Math.max(0.1, ($('sWid').valueAsNumber || 12) / 10), watts: stripWatts, lm: null, lmw: null, ppf, f: null, sh, beamC0, beamC90, ies: null, mode: 'ppf', label: 'LED-riba', strip: 5 } :
-      { len, wid, watts, lm, lmw, ppf, f, sh, beamC0, beamC90, ies: IES, mode, label: presetName }
+      { len, wid, watts, lm, lmw, ppf, f, sh, beamC0, beamC90, ies: IES, mode, label: isPcb ? 'LED-plaat' : presetName }
     }
   };
 }
@@ -1048,7 +1278,8 @@ function renderGuide() {
   const avg = r.avg;
   const maxP = 1000, pos = Math.min(avg, maxP) / maxP * 100;
   const hits = [];
-  let html = TARGETS.map((t, i) => {
+  const T = activeTargets();
+  let html = T.map((t, i) => {
     const on = avg >= t.ppfd[0] && avg <= t.ppfd[1];
     if (on) hits.push(i);
     return '<div class="rng' + (on ? ' on' : '') + '">' +
@@ -1062,15 +1293,15 @@ function renderGuide() {
 
   let rec;
   if (hits.length) {
-    const names = hits.map(i => TARGETS[i].name);
+    const names = hits.map(i => T[i].name);
     rec = 'Sobib: ' + names.slice(0, 3).join(', ') + (names.length > 3 ? ' …' : '') + '.';
   } else {
     let best = 0, bd = Infinity;
-    TARGETS.forEach((t, i) => {
+    T.forEach((t, i) => {
       const d = avg < t.ppfd[0] ? t.ppfd[0] - avg : (avg > t.ppfd[1] ? avg - t.ppfd[1] : 0);
       if (d < bd) { bd = d; best = i; }
     });
-    rec = avg < TARGETS[best].ppfd[0]
+    rec = avg < T[best].ppfd[0]
       ? 'Keskmine PPFD on kõigist sihtvahemikest madalam – tõsta valgusteid lähemale, lisa ridu/valgusteid või pikenda fotoperioodi.'
       : 'Keskmine PPFD ületab kõik sihtvahemikud – tõsta valgusteid kõrgemale või vähenda valgustite arvu/võimsust.';
   }
@@ -1846,6 +2077,7 @@ function recalc() {
     ? '= ' + fmt(sc.fix.lm / sc.fix.watts, 0) + ' lm/W' : '—';
 
   renderStripMode();
+  renderPcb();
   renderStrip();
   renderStats();
   renderGuide();
@@ -1944,7 +2176,8 @@ function markCustom() {
 function syncUI() {
   const mode = $('mode').value;
   const has = !!state.ies;
-  $('lampBlock1').hidden = mode === 'strip';
+  $('lampBlock1').hidden = mode === 'strip' || mode === 'pcb';
+  $('pcbBlock').hidden = mode !== 'pcb';
   $('stripBlock').hidden = mode !== 'strip';
   $('lmL').hidden = mode !== 'lm';
   $('lmwL').hidden = mode !== 'lm';
@@ -1956,7 +2189,7 @@ function syncUI() {
   $('sTL').hidden = !$('sqB').checked;
   $('sNL').hidden = $('sqB').checked;
   $('sLL').hidden = $('sqB').checked;
-  $('beamC0').disabled = $('beamC90').disabled = has;
+  $('beamC0').disabled = $('beamC90').disabled = has && mode !== 'pcb';
   $('beamHint').textContent = has
     ? 'Jaotus tuleb IES/LDT failist, nurki ei kasutata.'
     : 'C0 = piki valgusti pikkust, C90 = risti. IES/LDT faili korral tuleb jaotus failist.';
@@ -2009,7 +2242,7 @@ $('viewTabs').addEventListener('click', e => {
 
 $('preset').addEventListener('change', e => applyPreset(e.target.value));
 
-$('mode').addEventListener('change', () => { syncUI(); schedule(); });
+$('mode').addEventListener('change', onModeChange);
 $('cct').addEventListener('change', syncUI);
 ['sW','sEff','sN','sLen','sTot','sUtil','sWid','sRoll','sNW','sVW','sVR','sVS','sqA','sqB'].forEach(id => $(id).addEventListener('input', () => { syncUI(); schedule(); }));
 ['sqA','sqB'].forEach(id => $(id).addEventListener('change', () => { syncUI(); schedule(); }));
@@ -2245,7 +2478,288 @@ function buildPresetOptions() {
   sel.innerHTML = PRESETS.map(p => '<option value="' + p.id + '">' + p.name + '</option>').join('');
 }
 
+
+/* ---------------- V3.5: taimeteek + PCB kasutajaliides ---------------- */
+/*PLANTS-BEGIN*/
+const PLANTS = [{"id": "basiilik", "name_et": "Basiilik", "name_lat": "Ocimum basilicum", "stages": [{"id": "kasv", "label": "Kasv (seemik kuni õitsemine)", "ppfd": [150, 150], "dli": [9.7, 9.7], "hours": 18, "blue_pct": [5, 20], "rfr": "4-20", "note": "DLI arvutatud. Seemikuna kuni 600 katses, 16 h", "source": "Larsen et al. 2020, Response of Basil Growth and Morphology to Light Intensity and Spectrum in a Vertical Farm, Front. Plant Sci. 11:597906, https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2020.597906/full; Signify patent US12185680B2, Red and far-red light ratio during growth of basil, https://patents.google.com/patent/US12185680; Basil seedling LED study (autorid ei kontrollitud), https://pmc.ncbi.nlm.nih.gov/articles/PMC9409542"}, {"id": "saak", "label": "Saak (õitsemine kuni saak)", "ppfd": [300, 300], "dli": [19.4, 19.4], "hours": 18, "blue_pct": [5, 20], "rfr": "4-20", "note": "Larsen: 150 siis 300 viimased 5 päeva; sinine ~9% piisab", "source": "Larsen et al. 2020, Response of Basil Growth and Morphology to Light Intensity and Spectrum in a Vertical Farm, Front. Plant Sci. 11:597906, https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2020.597906/full; Signify patent US12185680B2, Red and far-red light ratio during growth of basil, https://patents.google.com/patent/US12185680"}]}, {"id": "koriander", "name_et": "Koriander", "name_lat": "Coriandrum sativum", "stages": [{"id": "kasv", "label": "Kasv (seemik kuni õitsemine)", "ppfd": [160, 160], "dli": [9.2, 9.2], "hours": 16, "blue_pct": [10, 20], "rfr": 3.2, "note": "DLI arvutatud. Parim R3B1FR1; Iowa: DLI 18 > 7", "source": "Akter et al. 2024, Impact of light spectral combinations on ... indoor-grown cilantro, Front. Sustain. Food Syst. 8, https://frontiersin.org/articles/10.3389/fsufs.2024.1499954/full; Iowa State University herb DLI study (Producegrower/Hortidaily kokkuvõte), https://www.hortidaily.com/article/9128215/quantifying-herb-growth-in-response-to-nutrient-solution-electrical-conductivity"}, {"id": "saak", "label": "Saak (õitsemine kuni saak)", "ppfd": [160, 160], "dli": [9.2, 9.2], "hours": 16, "blue_pct": [10, 20], "rfr": 3.2, "note": "sama seade", "source": "Akter et al. 2024, Impact of light spectral combinations on ... indoor-grown cilantro, Front. Sustain. Food Syst. 8, https://frontiersin.org/articles/10.3389/fsufs.2024.1499954/full; Iowa State University herb DLI study (Producegrower/Hortidaily kokkuvõte), https://www.hortidaily.com/article/9128215/quantifying-herb-growth-in-response-to-nutrient-solution-electrical-conductivity"}]}, {"id": "petersell", "name_et": "Petersell", "name_lat": "Petroselinum crispum", "stages": [{"id": "kasv", "label": "Kasv (seemik kuni õitsemine)", "ppfd": [null, null], "dli": [7, 18], "hours": null, "blue_pct": null, "rfr": null, "note": "Iowa: DLI 18 andis suurema massi kui 7; ülejäänu allikata", "source": "Iowa State University herb DLI study (Producegrower/Hortidaily kokkuvõte), https://www.hortidaily.com/article/9128215/quantifying-herb-growth-in-response-to-nutrient-solution-electrical-conductivity"}, {"id": "saak", "label": "Saak (õitsemine kuni saak)", "ppfd": [null, null], "dli": [7, 18], "hours": null, "blue_pct": null, "rfr": null, "note": "sama seade; ülejäänu allikata", "source": "Iowa State University herb DLI study (Producegrower/Hortidaily kokkuvõte), https://www.hortidaily.com/article/9128215/quantifying-herb-growth-in-response-to-nutrient-solution-electrical-conductivity"}]}, {"id": "till", "name_et": "Till", "name_lat": "Anethum graveolens", "stages": [{"id": "kasv", "label": "Kasv (seemik kuni õitsemine)", "ppfd": [null, null], "dli": [7, 18], "hours": null, "blue_pct": null, "rfr": null, "note": "Iowa: DLI 18 andis suurema massi kui 7; ülejäänu allikata", "source": "Iowa State University herb DLI study (Producegrower/Hortidaily kokkuvõte), https://www.hortidaily.com/article/9128215/quantifying-herb-growth-in-response-to-nutrient-solution-electrical-conductivity"}, {"id": "saak", "label": "Saak (õitsemine kuni saak)", "ppfd": [null, null], "dli": [7, 18], "hours": null, "blue_pct": null, "rfr": null, "note": "sama seade; ülejäänu allikata", "source": "Iowa State University herb DLI study (Producegrower/Hortidaily kokkuvõte), https://www.hortidaily.com/article/9128215/quantifying-herb-growth-in-response-to-nutrient-solution-electrical-conductivity"}]}, {"id": "munt", "name_et": "Münt", "name_lat": "Mentha spp.", "stages": [{"id": "kasv", "label": "Kasv (seemik kuni õitsemine)", "ppfd": [150, 200], "dli": [7.6, 10.1], "hours": 14, "blue_pct": null, "rfr": null, "note": "DLI arvutatud; 3 mündiliiki; sinine/rfr allikata", "source": "Mentha spp. LED intensity study (HortScience 60(7):1161, 2025; esmaallikas 403, loetud müüja kokkuvõte), https://www.benweilight.com/info/mint-species-growth-reactions-to-various-led-103474173.html"}, {"id": "saak", "label": "Saak (õitsemine kuni saak)", "ppfd": [150, 200], "dli": [7.6, 10.1], "hours": 14, "blue_pct": null, "rfr": null, "note": "sama seade; sinine/rfr allikata", "source": "Mentha spp. LED intensity study (HortScience 60(7):1161, 2025; esmaallikas 403, loetud müüja kokkuvõte), https://www.benweilight.com/info/mint-species-growth-reactions-to-various-led-103474173.html"}]}, {"id": "rukola", "name_et": "Rukola", "name_lat": "Eruca sativa", "stages": [{"id": "kasv", "label": "Kasv (seemik kuni õitsemine)", "ppfd": [150, 325], "dli": [13.0, 13.0], "hours": 24, "blue_pct": [8, 8], "rfr": null, "note": "Katses 24 h; DLI = 150×24 arvutatud; 92% punane", "source": "Mattson & Harwood 2012, Effect of Light Regimen on Yield and Flavonoid Content of Warehouse Grown Aeroponic Eruca sativa, Acta Hort. 956, https://ishs.org/ishs-article/956_49/"}, {"id": "saak", "label": "Saak (õitsemine kuni saak)", "ppfd": [150, 325], "dli": [13.0, 13.0], "hours": 24, "blue_pct": [8, 8], "rfr": null, "note": "sama seade; 24 h katse, tavatsükkel allikata", "source": "Mattson & Harwood 2012, Effect of Light Regimen on Yield and Flavonoid Content of Warehouse Grown Aeroponic Eruca sativa, Acta Hort. 956, https://ishs.org/ishs-article/956_49/"}]}, {"id": "salat", "name_et": "Salat (lehtsalat)", "name_lat": "Lactuca sativa", "stages": [{"id": "kasv", "label": "Kasv (seemik kuni õitsemine)", "ppfd": [250, 258], "dli": [14.4, 16.8], "hours": 16, "blue_pct": [3, 11], "rfr": null, "note": "16 h/250 DLI 14,4; 18 h/258 DLI 16,8; FR lisatud 52 (Jin)", "source": "Palmitessa et al. 2026, Continuous lighting at low PPFD ... lettuce in vertical farming, Front. Plant Sci., https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2026.1783548/full; Nunez Ocana et al. 2026, Continuous light at fixed DLI enhances lettuce growth, Front. Plant Sci., https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2026.1756524/full; Jin et al. 2021, Adding Far-Red to Red-Blue LED Light Promotes Yield of Lettuce, Front. Plant Sci. 11:609977, https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2020.609977/full; Kang, Ding, Meng 2026, Temporally increasing light intensity ... lettuce, Front. Plant Sci. 17:1763702, https://public-pages-files-2025.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2026.1763702/pdf"}, {"id": "saak", "label": "Saak (õitsemine kuni saak)", "ppfd": [250, 258], "dli": [14.4, 16.8], "hours": 16, "blue_pct": [3, 11], "rfr": null, "note": "sama seade", "source": "Palmitessa et al. 2026, Continuous lighting at low PPFD ... lettuce in vertical farming, Front. Plant Sci., https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2026.1783548/full; Nunez Ocana et al. 2026, Continuous light at fixed DLI enhances lettuce growth, Front. Plant Sci., https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2026.1756524/full; Jin et al. 2021, Adding Far-Red to Red-Blue LED Light Promotes Yield of Lettuce, Front. Plant Sci. 11:609977, https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2020.609977/full; Kang, Ding, Meng 2026, Temporally increasing light intensity ... lettuce, Front. Plant Sci. 17:1763702, https://public-pages-files-2025.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2026.1763702/pdf"}]}];
+/*PLANTS-END*/
+
+const AMBER = '#d9a21b';
+const NOTE_ARV = 'arvutatud, mõõtmata';
+const toRgb = c => 'rgb(' + c.join(',') + ')';
+
+function whiteRGB(K) {
+  const t = Math.min(1, Math.max(0, (K - 1800) / 4700));
+  const a = [255, 196, 130], b = [214, 228, 255];
+  return toRgb(a.map((v, i) => Math.round(v + (b[i] - v) * t)));
+}
+function pcbDotColor(t) {
+  if (t.kind === 'white') return whiteRGB(t.K);
+  return t.kind === '450' ? '#3d6bff' : t.kind === '660' ? '#e5333a' : '#7d1226';
+}
+function xyToRgb(x, y) {
+  const X = x / y, Y = 1, Z = (1 - x - y) / y;
+  let c = [3.2406 * X - 1.5372 * Y - 0.4986 * Z, -0.9689 * X + 1.8758 * Y + 0.0415 * Z, 0.0557 * X - 0.2040 * Y + 1.0570 * Z].map(v => Math.max(0, v));
+  const m = Math.max(...c, 1e-9);
+  c = c.map(v => { v /= m; v = v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055; return Math.round(255 * Math.min(1, Math.max(0, v))); });
+  return toRgb(c);
+}
+const escH = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+/* ---------- rows ---------- */
+function pcbTypeName(t) {
+  const L = pcbLib(t);
+  if (t.kind === 'white') return 'Valge ' + t.K + ' K, CRI' + t.cri;
+  return L.name;
+}
+function pcbRenderRows() {
+  const box = $('pcbRows');
+  if (!box) return;
+  const hd = '<div class="pcbrow hd"><span>LED tüüp</span><span>tk</span><span>mA</span><span>Vf (V)</span><span>PPE (µmol/J)</span><span></span></div>';
+  const rows = pcb.types.map(t => {
+    const L = pcbLib(t), as = k => (L.assumed || []).indexOf(k) >= 0 ? '<span class="pcbtag">eeldus</span>' : '';
+    return '<div class="pcbrow" data-uid="' + t.uid + '">' +
+      '<div class="pcbnm"><i class="pcbdot" style="background:' + pcbDotColor(t) + '"></i>' + escH(pcbTypeName(t)) +
+      '<small>' + escH(L.src) + (L.id.indexOf('mudel_') === 0 ? ' · ' + escH(L.name) : '') + '</small></div>' +
+      '<div class="pcbcnt"><button type="button" class="mini" data-act="dec" aria-label="Vähenda">−</button><span>' + t.n +
+      '</span><button type="button" class="mini" data-act="inc" aria-label="Suurenda">+</button></div>' +
+      '<div><input type="number" data-f="mA" value="' + t.mA + '" min="1" max="2000" step="any" inputmode="decimal" aria-label="mA">' + as('mA') + '</div>' +
+      '<div><input type="number" data-f="vf" value="' + t.vf + '" min="0.5" max="12" step="any" inputmode="decimal" aria-label="Vf">' + as('vf') + '</div>' +
+      '<div><input type="number" data-f="ppe" value="' + t.ppe + '" min="0.1" max="5" step="any" inputmode="decimal" aria-label="PPE">' + as('umolJ') + '</div>' +
+      '<button type="button" class="mini" data-act="del" aria-label="Eemalda rida">×</button></div>';
+  }).join('');
+  box.innerHTML = hd + (rows || '<p class="hint">Lisa vähemalt üks LED.</p>');
+}
+function pcbRowEvents() {
+  const box = $('pcbRows');
+  box.addEventListener('click', e => {
+    const b = e.target.closest('button[data-act]');
+    if (!b) return;
+    const row = b.closest('.pcbrow'), uid = row ? +row.dataset.uid : 0;
+    const i = pcb.types.findIndex(t => t.uid === uid);
+    if (i < 0) return;
+    const act = b.dataset.act;
+    if (act === 'inc') pcb.types[i].n = Math.min(2000, pcb.types[i].n + 1);
+    else if (act === 'dec') pcb.types[i].n = Math.max(1, pcb.types[i].n - 1);
+    else if (act === 'del') pcb.types.splice(i, 1);
+    pcbRenderRows();
+    schedule();
+  });
+  box.addEventListener('input', e => {
+    const el = e.target;
+    if (!el.dataset || !el.dataset.f) return;
+    const row = el.closest('.pcbrow'), t = row && pcb.types.find(x => x.uid === +row.dataset.uid);
+    const v = el.valueAsNumber;
+    if (!t || !isFinite(v) || v <= 0) return;
+    t[el.dataset.f] = v;
+    schedule();
+  });
+}
+function pcbAddWhite() {
+  const msg = $('pcbMsg');
+  const raw = ($('pcbK').value || '').trim().replace(/\s*K$/i, '');
+  const v = Number(raw.replace(',', '.'));
+  if (!isFinite(v) || raw === '') { msg.textContent = 'Kelvin peab olema number 1800–6500'; msg.hidden = false; return; }
+  const K = Math.min(6500, Math.max(1800, Math.round(v)));
+  msg.textContent = K !== Math.round(v) ? 'Kelvin piiratud vahemikku 1800–6500 (' + K + ' K)' : '';
+  msg.hidden = K === Math.round(v);
+  $('pcbK').value = K;
+  pcbAdd('white', K, +$('pcbCri').value, 1);
+  pcbRenderRows();
+  schedule();
+}
+
+/* ---------- picture ---------- */
+function pcbDrawSvg() {
+  const W = Math.max(10, $('pcbW').valueAsNumber || 50), H = Math.max(10, $('pcbH').valueAsNumber || 50);
+  const sc = 200 / Math.max(W, H), vw = Math.round(W * sc), vh = Math.round(H * sc);
+  const total = pcb.types.reduce((s, t) => s + t.n, 0);
+  const N = Math.min(500, total);
+  const cnt = pcb.types.map(t => Math.max(1, Math.round(t.n * N / (total || 1))));
+  let sumC = cnt.reduce((s, v) => s + v, 0);
+  while (sumC > N && sumC > pcb.types.length) { const k = cnt.indexOf(Math.max(...cnt)); cnt[k]--; sumC--; }
+  const tot = sumC;
+  const seq = [], got = cnt.map(() => 0);
+  for (let k = 0; k < tot; k++) {
+    let best = -1, bv = Infinity;
+    cnt.forEach((c, i) => { if (got[i] < c) { const v = (got[i] + 0.5) / c; if (v < bv) { bv = v; best = i; } } });
+    got[best]++; seq.push(best);
+  }
+  const m = 12, cols = Math.max(1, Math.ceil(Math.sqrt(tot * (vw - 2 * m) / Math.max(1, vh - 2 * m)))), rows = Math.max(1, Math.ceil(tot / cols));
+  const cell = Math.min((vw - 2 * m) / cols, (vh - 2 * m) / rows), r = Math.min(6, cell * 0.36);
+  const ox = (vw - cell * cols) / 2, oy = (vh - cell * rows) / 2;
+  let s = '<svg viewBox="0 0 ' + vw + ' ' + vh + '" width="100%" style="max-width:260px;display:block;margin:6px 0" role="img" aria-label="LED-plaadi skeem">' +
+    '<rect x="0.5" y="0.5" width="' + (vw - 1) + '" height="' + (vh - 1) + '" rx="3" fill="#161b19" stroke="#8c9aa3" stroke-width="1"/>' +
+    '<rect x="2" y="' + (vh / 2 - 7) + '" width="5" height="14" fill="#c4ccd2"/><rect x="' + (vw - 7) + '" y="' + (vh / 2 - 7) + '" width="5" height="14" fill="#c4ccd2"/>';
+  seq.forEach((ti, k) => {
+    const cx = ox + (k % cols + 0.5) * cell, cy = oy + (Math.floor(k / cols) + 0.5) * cell;
+    s += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + r.toFixed(1) + '" fill="' + pcbDotColor(pcb.types[ti]) + '" stroke="#0b0e0d" stroke-width="0.4"/>';
+  });
+  s += '</svg>';
+  const cap = total > 500 ? ' · näidatud 500 punkti proportsionaalselt' : '';
+  return s + '<p class="hint">' + total + ' LED-i · ' + fmt(W, 0) + ' × ' + fmt(H, 0) + ' mm' + cap + '</p>';
+}
+
+/* ---------- spectrum curve ---------- */
+function pcbSpecSvg(spd) {
+  const mx = Math.max(...spd, 1e-9), w = 320, h = 90, px = 6, py = 8;
+  const X = i => px + i / 80 * (w - 2 * px), Y = v => h - 16 - v / mx * (h - 16 - py);
+  const pts = spd.map((v, i) => X(i).toFixed(1) + ',' + Y(v).toFixed(1)).join(' ');
+  let s = '<svg viewBox="0 0 ' + w + ' ' + h + '" width="100%" style="max-width:360px;display:block" role="img" aria-label="Spekter 380–780 nm">' +
+    '<line x1="' + px + '" y1="' + (h - 16) + '" x2="' + (w - px) + '" y2="' + (h - 16) + '" stroke="var(--line)"/>';
+  [400, 500, 600, 700].forEach(l => {
+    const x = X((l - 380) / 5);
+    s += '<line x1="' + x + '" y1="' + (h - 16) + '" x2="' + x + '" y2="' + (h - 12) + '" stroke="var(--muted)"/><text x="' + x + '" y="' + (h - 2) + '" font-size="9" text-anchor="middle" fill="var(--muted)">' + l + '</text>';
+  });
+  return s + '<polyline points="' + pts + '" fill="none" stroke="var(--accent)" stroke-width="1.6"/></svg>';
+}
+
+/* ---------- plants ---------- */
+function rngOf(v) {
+  if (v == null) return null;
+  let a;
+  if (Array.isArray(v)) a = v.map(x => (x == null ? NaN : Number(x)));
+  else if (typeof v === 'number') a = [v];
+  else a = (String(v).match(/\d+(?:[.,]\d+)?/g) || []).map(x => parseFloat(x.replace(',', '.')));
+  a = a.filter(x => isFinite(x));
+  if (!a.length) return null;
+  return a.length === 1 ? [a[0], a[0]] : [Math.min(a[0], a[1]), Math.max(a[0], a[1])];
+}
+const widenR = r => (r && r[0] === r[1]) ? [r[0] * 0.9, r[1] * 1.1] : r;
+function plantStage() {
+  const p = PLANTS.find(x => x.id === pcb.plant);
+  if (!p) return null;
+  const s = p.stages.find(x => x.id === pcb.stage) || p.stages[0];
+  return s ? { p, s } : null;
+}
+function activeTargets() {
+  const out = TARGETS.slice();
+  if ($('mode').value === 'pcb') {
+    const ps = plantStage();
+    const pr = ps && widenR(rngOf(ps.s.ppfd));
+    if (pr) {
+      const dl = widenR(rngOf(ps.s.dli));
+      out.unshift({
+        name: ps.p.name_et + ' · ' + String(ps.s.label).replace(/\s*\(.*$/, '') + ' (valitud)',
+        ppfd: [Math.round(pr[0]), Math.round(pr[1])], dli: dl ? [dl[0], dl[1]] : [0, 0]
+      });
+    }
+  }
+  return out;
+}
+function plantFill() {
+  const ps = pcb.plant ? PLANTS.find(x => x.id === pcb.plant) : null;
+  const st = $('pcbStage');
+  st.innerHTML = ps ? ps.stages.map(s => '<option value="' + s.id + '">' + escH(s.label) + '</option>').join('') : '<option value="">—</option>';
+  st.disabled = !ps;
+  if (ps) { if (!ps.stages.some(s => s.id === pcb.stage)) pcb.stage = ps.stages[0].id; st.value = pcb.stage; }
+  plantHours();
+}
+function plantHours() {
+  const ps = plantStage(), hn = $('pcbHoursNote');
+  if (ps && ps.s.hours != null && isFinite(ps.s.hours)) {
+    $('pcbHours').value = ps.s.hours;
+    $('hours').value = ps.s.hours;
+    hn.textContent = 'valgusaeg etapist: ' + ps.s.hours + ' h (muudetav)';
+  } else {
+    hn.textContent = ps ? 'valgusaeg: allikata' : '';
+  }
+}
+function matchState(v, r, rel) {
+  if (v == null || !isFinite(v) || !r) return 'na';
+  if (v >= r[0] && v <= r[1]) return 'ok';
+  const d = v < r[0] ? r[0] - v : v - r[1];
+  return d <= rel * Math.max(r[1], 1e-9) ? 'near' : 'off';
+}
+function matchRow(label, valTxt, r, st, unit) {
+  const col = st === 'ok' ? 'var(--green)' : st === 'near' ? AMBER : st === 'off' ? 'var(--danger)' : 'var(--muted)';
+  const tgt = r ? fmt(r[0], r[0] < 10 ? 1 : 0) + '–' + fmt(r[1], r[1] < 10 ? 1 : 0) + (unit || '') : 'allikata';
+  return '<div style="display:flex;gap:8px;align-items:baseline;border-bottom:1px solid var(--line);padding:3px 0"><i class="pcbdot" style="background:' + col + '"></i>' +
+    '<span style="flex:1">' + label + ' <b>' + valTxt + '</b></span><span class="grey">siht ' + tgt + '</span></div>';
+}
+function renderPcbMatch(res) {
+  const box = $('pcbMatch');
+  const ps = plantStage();
+  if (!ps) { box.innerHTML = '<p class="hint">Vali taim ja etapp, et näha sobivust.</p>'; return; }
+  const s = ps.s, r = state.result;
+  const pr = widenR(rngOf(s.ppfd)), br = widenR(rngOf(s.blue_pct)), rr = widenR(rngOf(s.rfr));
+  const avg = r ? r.avg : null;
+  const par = res && res.ok ? res.b + res.g + res.r : 0;
+  const bluePct = par > 0 ? res.b / par * 100 : null;
+  const rfr = res && res.ok && res.fr > 1e-6 ? res.r / res.fr : null;
+  let h = '<div class="sub">Sobivus: ' + escH(ps.p.name_et) + ' · ' + escH(String(s.label).replace(/\s*\(.*$/, '')) + '</div>';
+  h += matchRow('PPFD Ø', avg != null ? fmt(avg, 0) + ' µmol/m²/s' : '—', pr, matchState(avg, pr, 0.2));
+  h += matchRow('Sinine osa PAR-ist', bluePct != null ? fmt(bluePct, 1) + ' %' : '—', br, matchState(bluePct, br, 0.25), ' %');
+  h += matchRow('R:FR (600–700 / 700–750)', rfr != null ? fmt(rfr, 1) : '—', rr, matchState(rfr, rr, 0.25));
+  h += '<p class="hint" style="margin-top:6px">' + NOTE_ARV + ' · roheline sees, merevaigukollane lähedal, punane väljas · kuvatud sihtvahemik: ±10 % kui allikas annab ühe väärtuse</p>';
+  if (s.note) h += '<p class="hint">' + escH(s.note) + '</p>';
+  if (s.source) h += '<p class="hint">Allikas: ' + escH(s.source) + '</p>';
+  h += '<p class="hint">Üks valgus seemnest saagini või kaks etappi — vali etapp. Õitsemise ja valgusaja täpsem seadistus tuleb hiljem.</p>';
+  box.innerHTML = h;
+}
+
+/* ---------- result ---------- */
+function renderPcb() {
+  if ($('mode').value !== 'pcb') return;
+  const res = pcb.res = pcbMix(pcb.types);
+  $('pcbSvg').innerHTML = pcbDrawSvg();
+  const row = (k, v) => '<div style="display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding:3px 0"><span>' + k +
+    '</span><span><b>' + v + '</b> <i class="grey" style="font-size:.62rem;font-style:normal">' + NOTE_ARV + '</i></span></div>';
+  if (!res.ok) { $('pcbOut').innerHTML = '<p class="err">Lisa vähemalt üks LED (tk, mA ja Vf peavad olema üle nulli).</p>'; renderPcbMatch(res); return; }
+  const pc = x => fmt(x * 100, 1) + ' %';
+  let h = row('Koguvõimsus', fmt(res.W, 2) + ' W') + row('PPF', fmt(res.PPF, 2) + ' µmol/s') + row('PPE', fmt(res.ppe, 2) + ' µmol/J') +
+    row('Sinine 400–500 nm', pc(res.b)) + row('Roheline 500–600 nm', pc(res.g)) + row('Punane 600–700 nm', pc(res.r)) +
+    row('Sügavpunane 700–750 nm', pc(res.fr)) + row('640–680 nm', pc(res.z)) +
+    row('xy (CIE 1931)', fmt(res.x, 4) + '; ' + fmt(res.y, 4)) + row('CCT (McCamy)', fmtI(res.cct) + ' K') +
+    row('Duv (ligikaudne)', fmt(res.duv, 4).replace(/^(\d)/, '+$1'));
+  h += '<div style="display:flex;gap:10px;align-items:center;padding:6px 0"><span style="width:34px;height:22px;border-radius:3px;border:1px solid var(--line);background:' +
+    xyToRgb(res.x, res.y) + '"></span><span class="grey">värvi näide (xy järgi) · ' + NOTE_ARV + '</span></div>' + pcbSpecSvg(res.spd);
+  h += '<p class="hint">draiveri kadu arvestamata · ' + NOTE_ARV + '</p>';
+  const seen = {};
+  pcb.types.forEach(t => {
+    const L = pcbLib(t), key = L.id + '/' + t.mA;
+    if (seen[key]) return;
+    seen[key] = 1;
+    let ln = L.line;
+    if (Math.abs(t.mA - L.mA) > 1e-9) ln += ' (valitud ' + t.mA + ' mA)';
+    h += '<p class="hint">' + escH(ln) + '</p>';
+  });
+  $('pcbOut').innerHTML = h;
+  renderPcbMatch(res);
+}
+
+let pcbPrevBeam = null;
+function onModeChange() {
+  if ($('mode').value === 'pcb') {
+    if (!pcb.types.length) { pcbAdd('white', 6500, 80, 5); pcbAdd('660', 0, 0, 3); }
+    if (pcbPrevBeam === null) pcbPrevBeam = [$('beamC0').value, $('beamC90').value];
+    $('beamC0').value = 120;
+    $('beamC90').value = 120;
+    pcbRenderRows();
+  } else if (pcbPrevBeam !== null) {
+    $('beamC0').value = pcbPrevBeam[0];
+    $('beamC90').value = pcbPrevBeam[1];
+    pcbPrevBeam = null;
+  }
+  syncUI();
+  schedule();
+}
+
+function pcbInit() {
+  $('pcbPlant').innerHTML = '<option value="">— vali taim —</option>' + PLANTS.map(p => '<option value="' + p.id + '">' + escH(p.name_et) + '</option>').join('');
+  plantFill();
+  pcbRowEvents();
+  $('pcbAddWhite').addEventListener('click', pcbAddWhite);
+  $('pcbK').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); pcbAddWhite(); } });
+  [['pcbAdd450', '450'], ['pcbAdd660', '660'], ['pcbAdd730', '730']].forEach(([id, kind]) => $(id).addEventListener('click', () => { pcbAdd(kind, 0, 0, 1); pcbRenderRows(); schedule(); }));
+  ['pcbW', 'pcbH'].forEach(id => $(id).addEventListener('input', schedule));
+  $('pcbPlant').addEventListener('change', e => { pcb.plant = e.target.value; plantFill(); schedule(); });
+  $('pcbStage').addEventListener('change', e => { pcb.stage = e.target.value; plantHours(); schedule(); });
+  $('pcbHours').addEventListener('input', e => { const v = e.target.valueAsNumber; if (isFinite(v) && v >= 0 && v <= 24) { $('hours').value = v; schedule(); } });
+}
+
 function init() {
+  pcbInit();
   // theme
   let saved = null;
   try { saved = localStorage.getItem('kv-theme'); } catch (err) {}
