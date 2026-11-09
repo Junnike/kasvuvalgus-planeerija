@@ -2,7 +2,7 @@
 <html lang="et">
 <head>
 <meta charset="utf-8">
-<title>Kasvuvalguse kalkulaator V3.5</title>
+<title>Kasvuvalguse kalkulaator V3.6</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -74,6 +74,7 @@ h3{font-size:.85rem;margin:14px 0 6px;font-weight:600}
 .seg button+button{border-left:1px solid var(--line)}
 .seg button:hover{color:var(--fg)}
 .seg button.on{background:var(--accent);color:var(--accent-fg)}
+#modeSeg button{flex:1 1 auto;min-width:110px}
 .steps{display:flex;gap:6px;overflow-x:auto;padding:0 max(16px, env(safe-area-inset-left,0px)) 9px;scrollbar-width:thin}
 .stepbtn{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--surface);
   color:var(--fg);border-radius:999px;padding:5px 13px 5px 6px;font:500 .84rem var(--sans);cursor:pointer;white-space:nowrap}
@@ -239,7 +240,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
   <div class="topbar">
     <div class="brand">
       <h1>Kasvuvalguse kalkulaator</h1>
-      <span class="tag">V3.5 · 09.11.2026</span>
+      <span class="tag">V3.6 · 09.11.2026</span>
     </div>
     <div class="topact">
       <div class="seg" id="themeSeg" role="group" aria-label="Teema">
@@ -269,8 +270,8 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
       <h2>1 · Ruum</h2>
       <div class="subh">Kasvuala mõõdud</div>
       <div class="grid3">
-        <label class="f" for="l">Pikkus (cm)<input type="number" id="l" value="1822" min="20" max="3000" step="1" inputmode="decimal"></label>
-        <label class="f" for="w">Laius (cm)<input type="number" id="w" value="88" min="20" max="3000" step="1" inputmode="decimal"></label>
+        <label class="f" for="l">Pikkus (cm)<input type="number" id="l" value="120" min="20" max="3000" step="1" inputmode="decimal"></label>
+        <label class="f" for="w">Laius (cm)<input type="number" id="w" value="60" min="20" max="3000" step="1" inputmode="decimal"></label>
         <label class="f" for="rh">Kõrgus (cm)<input type="number" id="rh" value="50" min="20" max="600" step="1" inputmode="decimal"></label>
       </div>
       <div class="grid2">
@@ -309,9 +310,15 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
       </div>
 
       </div>
-      <div class="sub">Valgusvoog</div>
-      <label class="f" for="mode">Valgusvoo määramine
-        <select id="mode">
+      <div class="sub">Valgusvoo määramine</div>
+      <div class="seg" id="modeSeg" role="group" aria-label="Valgusvoo määramine" style="margin-top:4px;flex-wrap:wrap">
+        <button type="button" data-mode="lm" class="on">Valgusvoog (lm)</button>
+        <button type="button" data-mode="ppf">PPF (µmol/s)</button>
+        <button type="button" data-mode="strip">LED-riba</button>
+        <button type="button" data-mode="pcb">LED-plaat</button>
+      </div>
+      <label class="f" for="mode" hidden>Valgusvoo määramine
+        <select id="mode" hidden>
           <option value="lm" selected>Valgusvoog (lm) + CCT/Ra</option>
           <option value="ppf">PPF (µmol/s)</option>
           <option value="strip">LED-riba</option>
@@ -363,6 +370,8 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
       </div>
       <div id="pcbBlock" hidden>
         <div class="sub">LED-plaat (koosta ise)</div>
+        <div id="pcbSvg"></div>
+        <div id="pcbOut" style="display:grid;gap:2px;font:500 .85rem var(--mono)"></div>
         <div class="grid2">
           <label class="f" for="pcbW">Plaadi laius (mm)<input type="number" id="pcbW" value="50" min="10" max="2000" step="1" inputmode="decimal"></label>
           <label class="f" for="pcbH">Plaadi kõrgus (mm)<input type="number" id="pcbH" value="50" min="10" max="2000" step="1" inputmode="decimal"></label>
@@ -386,8 +395,6 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
           <label class="f" for="pcbStage">Etapp<select id="pcbStage"></select></label>
           <label class="f" for="pcbHours">Valgusaeg (h)<input type="number" id="pcbHours" value="16" min="0" max="24" step="0.5" inputmode="decimal"><small class="hint" id="pcbHoursNote"></small></label>
         </div>
-        <div id="pcbSvg"></div>
-        <div id="pcbOut" style="display:grid;gap:2px;font:500 .85rem var(--mono)"></div>
         <div class="sub">Sobivus taimega</div>
         <div id="pcbMatch" style="font-size:.82rem"></div>
       </div>
@@ -520,7 +527,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
         <div class="rep-head">
           <div>
             <h1>Kasvuvalguse arvutusaruanne</h1>
-            <div class="rep-sub">Kasvuvalguse kalkulaator V3.5 · punktvalgusallikate mudel</div>
+            <div class="rep-sub">Kasvuvalguse kalkulaator V3.6 · punktvalgusallikate mudel</div>
           </div>
           <div class="rep-sub" id="repMeta"></div>
         </div>
@@ -550,7 +557,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
 <script>
 'use strict';
 /* =====================================================================
-   Kasvuvalguse kalkulaator V3.5
+   Kasvuvalguse kalkulaator V3.6
    Grow-light PPFD calculator: point sources + wall mirrors, C0/C90 or IES.
    Light output is given in lm / PPF / µmol/J × W – never derived from watts.
    ===================================================================== */
@@ -2198,6 +2205,7 @@ function syncUI() {
   $('addLamp').disabled = $('delLamp').disabled = state.layout !== 'manual';
   $('iesx').hidden = !has;
   $('iesInfo').hidden = !has;
+  syncModeSeg();
 }
 
 function showIes() {
@@ -2243,6 +2251,13 @@ $('viewTabs').addEventListener('click', e => {
 $('preset').addEventListener('change', e => applyPreset(e.target.value));
 
 $('mode').addEventListener('change', onModeChange);
+function syncModeSeg() {
+  document.querySelectorAll('#modeSeg button').forEach(b => b.classList.toggle('on', b.dataset.mode === $('mode').value));
+}
+document.querySelectorAll('#modeSeg button').forEach(b => b.addEventListener('click', () => {
+  $('mode').value = b.dataset.mode;
+  $('mode').dispatchEvent(new Event('change'));
+}));
 $('cct').addEventListener('change', syncUI);
 ['sW','sEff','sN','sLen','sTot','sUtil','sWid','sRoll','sNW','sVW','sVR','sVS','sqA','sqB'].forEach(id => $(id).addEventListener('input', () => { syncUI(); schedule(); }));
 ['sqA','sqB'].forEach(id => $(id).addEventListener('change', () => { syncUI(); schedule(); }));
@@ -2344,10 +2359,10 @@ function download(name, data, type) {
 }
 
 $('reset').addEventListener('click', () => {
-  $('w').value = 88; $('l').value = 1822; $('rh').value = 50;
+  $('w').value = 60; $('l').value = 120; $('rh').value = 50;
   $('h').value = 35; $('step').value = '10';
   $('rho').value = 60; $('mf').value = 0.9; $('hours').value = 16;
-  $('rows').value = 1; $('cols').value = 4;
+  $('rows').value = 1; $('cols').value = 1;
   $('ori').value = 'y';
   $('underlay').checked = false;
   state.layout = 'auto';
@@ -2355,7 +2370,7 @@ $('reset').addEventListener('click', () => {
   $('pMan').checked = false;
   dropIes();
   applyPreset('tp_120_6k');
-  state.lamps = autoLamps(88, 1822, 1, 4);
+  state.lamps = autoLamps(60, 120, 1, 1);
   setLayout('auto');
   goStep(1);
   recalc();
@@ -2479,7 +2494,7 @@ function buildPresetOptions() {
 }
 
 
-/* ---------------- V3.5: taimeteek + PCB kasutajaliides ---------------- */
+/* ---------------- V3.6: taimeteek + PCB kasutajaliides ---------------- */
 /*PLANTS-BEGIN*/
 const PLANTS = [{"id": "basiilik", "name_et": "Basiilik", "name_lat": "Ocimum basilicum", "stages": [{"id": "kasv", "label": "Kasv (seemik kuni õitsemine)", "ppfd": [150, 150], "dli": [9.7, 9.7], "hours": 18, "blue_pct": [5, 20], "rfr": "4-20", "note": "DLI arvutatud. Seemikuna kuni 600 katses, 16 h", "source": "Larsen et al. 2020, Response of Basil Growth and Morphology to Light Intensity and Spectrum in a Vertical Farm, Front. Plant Sci. 11:597906, https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2020.597906/full; Signify patent US12185680B2, Red and far-red light ratio during growth of basil, https://patents.google.com/patent/US12185680; Basil seedling LED study (autorid ei kontrollitud), https://pmc.ncbi.nlm.nih.gov/articles/PMC9409542"}, {"id": "saak", "label": "Saak (õitsemine kuni saak)", "ppfd": [300, 300], "dli": [19.4, 19.4], "hours": 18, "blue_pct": [5, 20], "rfr": "4-20", "note": "Larsen: 150 siis 300 viimased 5 päeva; sinine ~9% piisab", "source": "Larsen et al. 2020, Response of Basil Growth and Morphology to Light Intensity and Spectrum in a Vertical Farm, Front. Plant Sci. 11:597906, https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2020.597906/full; Signify patent US12185680B2, Red and far-red light ratio during growth of basil, https://patents.google.com/patent/US12185680"}]}, {"id": "koriander", "name_et": "Koriander", "name_lat": "Coriandrum sativum", "stages": [{"id": "kasv", "label": "Kasv (seemik kuni õitsemine)", "ppfd": [160, 160], "dli": [9.2, 9.2], "hours": 16, "blue_pct": [10, 20], "rfr": 3.2, "note": "DLI arvutatud. Parim R3B1FR1; Iowa: DLI 18 > 7", "source": "Akter et al. 2024, Impact of light spectral combinations on ... indoor-grown cilantro, Front. Sustain. Food Syst. 8, https://frontiersin.org/articles/10.3389/fsufs.2024.1499954/full; Iowa State University herb DLI study (Producegrower/Hortidaily kokkuvõte), https://www.hortidaily.com/article/9128215/quantifying-herb-growth-in-response-to-nutrient-solution-electrical-conductivity"}, {"id": "saak", "label": "Saak (õitsemine kuni saak)", "ppfd": [160, 160], "dli": [9.2, 9.2], "hours": 16, "blue_pct": [10, 20], "rfr": 3.2, "note": "sama seade", "source": "Akter et al. 2024, Impact of light spectral combinations on ... indoor-grown cilantro, Front. Sustain. Food Syst. 8, https://frontiersin.org/articles/10.3389/fsufs.2024.1499954/full; Iowa State University herb DLI study (Producegrower/Hortidaily kokkuvõte), https://www.hortidaily.com/article/9128215/quantifying-herb-growth-in-response-to-nutrient-solution-electrical-conductivity"}]}, {"id": "petersell", "name_et": "Petersell", "name_lat": "Petroselinum crispum", "stages": [{"id": "kasv", "label": "Kasv (seemik kuni õitsemine)", "ppfd": [null, null], "dli": [7, 18], "hours": null, "blue_pct": null, "rfr": null, "note": "Iowa: DLI 18 andis suurema massi kui 7; ülejäänu allikata", "source": "Iowa State University herb DLI study (Producegrower/Hortidaily kokkuvõte), https://www.hortidaily.com/article/9128215/quantifying-herb-growth-in-response-to-nutrient-solution-electrical-conductivity"}, {"id": "saak", "label": "Saak (õitsemine kuni saak)", "ppfd": [null, null], "dli": [7, 18], "hours": null, "blue_pct": null, "rfr": null, "note": "sama seade; ülejäänu allikata", "source": "Iowa State University herb DLI study (Producegrower/Hortidaily kokkuvõte), https://www.hortidaily.com/article/9128215/quantifying-herb-growth-in-response-to-nutrient-solution-electrical-conductivity"}]}, {"id": "till", "name_et": "Till", "name_lat": "Anethum graveolens", "stages": [{"id": "kasv", "label": "Kasv (seemik kuni õitsemine)", "ppfd": [null, null], "dli": [7, 18], "hours": null, "blue_pct": null, "rfr": null, "note": "Iowa: DLI 18 andis suurema massi kui 7; ülejäänu allikata", "source": "Iowa State University herb DLI study (Producegrower/Hortidaily kokkuvõte), https://www.hortidaily.com/article/9128215/quantifying-herb-growth-in-response-to-nutrient-solution-electrical-conductivity"}, {"id": "saak", "label": "Saak (õitsemine kuni saak)", "ppfd": [null, null], "dli": [7, 18], "hours": null, "blue_pct": null, "rfr": null, "note": "sama seade; ülejäänu allikata", "source": "Iowa State University herb DLI study (Producegrower/Hortidaily kokkuvõte), https://www.hortidaily.com/article/9128215/quantifying-herb-growth-in-response-to-nutrient-solution-electrical-conductivity"}]}, {"id": "munt", "name_et": "Münt", "name_lat": "Mentha spp.", "stages": [{"id": "kasv", "label": "Kasv (seemik kuni õitsemine)", "ppfd": [150, 200], "dli": [7.6, 10.1], "hours": 14, "blue_pct": null, "rfr": null, "note": "DLI arvutatud; 3 mündiliiki; sinine/rfr allikata", "source": "Mentha spp. LED intensity study (HortScience 60(7):1161, 2025; esmaallikas 403, loetud müüja kokkuvõte), https://www.benweilight.com/info/mint-species-growth-reactions-to-various-led-103474173.html"}, {"id": "saak", "label": "Saak (õitsemine kuni saak)", "ppfd": [150, 200], "dli": [7.6, 10.1], "hours": 14, "blue_pct": null, "rfr": null, "note": "sama seade; sinine/rfr allikata", "source": "Mentha spp. LED intensity study (HortScience 60(7):1161, 2025; esmaallikas 403, loetud müüja kokkuvõte), https://www.benweilight.com/info/mint-species-growth-reactions-to-various-led-103474173.html"}]}, {"id": "rukola", "name_et": "Rukola", "name_lat": "Eruca sativa", "stages": [{"id": "kasv", "label": "Kasv (seemik kuni õitsemine)", "ppfd": [150, 325], "dli": [13.0, 13.0], "hours": 24, "blue_pct": [8, 8], "rfr": null, "note": "Katses 24 h; DLI = 150×24 arvutatud; 92% punane", "source": "Mattson & Harwood 2012, Effect of Light Regimen on Yield and Flavonoid Content of Warehouse Grown Aeroponic Eruca sativa, Acta Hort. 956, https://ishs.org/ishs-article/956_49/"}, {"id": "saak", "label": "Saak (õitsemine kuni saak)", "ppfd": [150, 325], "dli": [13.0, 13.0], "hours": 24, "blue_pct": [8, 8], "rfr": null, "note": "sama seade; 24 h katse, tavatsükkel allikata", "source": "Mattson & Harwood 2012, Effect of Light Regimen on Yield and Flavonoid Content of Warehouse Grown Aeroponic Eruca sativa, Acta Hort. 956, https://ishs.org/ishs-article/956_49/"}]}, {"id": "salat", "name_et": "Salat (lehtsalat)", "name_lat": "Lactuca sativa", "stages": [{"id": "kasv", "label": "Kasv (seemik kuni õitsemine)", "ppfd": [250, 258], "dli": [14.4, 16.8], "hours": 16, "blue_pct": [3, 11], "rfr": null, "note": "16 h/250 DLI 14,4; 18 h/258 DLI 16,8; FR lisatud 52 (Jin)", "source": "Palmitessa et al. 2026, Continuous lighting at low PPFD ... lettuce in vertical farming, Front. Plant Sci., https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2026.1783548/full; Nunez Ocana et al. 2026, Continuous light at fixed DLI enhances lettuce growth, Front. Plant Sci., https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2026.1756524/full; Jin et al. 2021, Adding Far-Red to Red-Blue LED Light Promotes Yield of Lettuce, Front. Plant Sci. 11:609977, https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2020.609977/full; Kang, Ding, Meng 2026, Temporally increasing light intensity ... lettuce, Front. Plant Sci. 17:1763702, https://public-pages-files-2025.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2026.1763702/pdf"}, {"id": "saak", "label": "Saak (õitsemine kuni saak)", "ppfd": [250, 258], "dli": [14.4, 16.8], "hours": 16, "blue_pct": [3, 11], "rfr": null, "note": "sama seade", "source": "Palmitessa et al. 2026, Continuous lighting at low PPFD ... lettuce in vertical farming, Front. Plant Sci., https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2026.1783548/full; Nunez Ocana et al. 2026, Continuous light at fixed DLI enhances lettuce growth, Front. Plant Sci., https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2026.1756524/full; Jin et al. 2021, Adding Far-Red to Red-Blue LED Light Promotes Yield of Lettuce, Front. Plant Sci. 11:609977, https://www.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2020.609977/full; Kang, Ding, Meng 2026, Temporally increasing light intensity ... lettuce, Front. Plant Sci. 17:1763702, https://public-pages-files-2025.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2026.1763702/pdf"}]}];
 /*PLANTS-END*/
@@ -2771,14 +2786,14 @@ function init() {
 
   buildPresetOptions();
 
-  // default scene (Junn 03.11): 88×1822×50 cm, 4 × triproof 6000 K tubes, long axis y, 1 row × 4 cols, 35 cm, MF 0.9, 16 h
-  $('w').value = 88; $('l').value = 1822; $('rh').value = 50;
+  // default scene (v3_6 09.11): 60×120×50 cm, 1 × triproof 6000 K tube
+  $('w').value = 60; $('l').value = 120; $('rh').value = 50;
   $('h').value = 35; $('step').value = '10';
   $('rho').value = 60; $('mf').value = 0.9; $('hours').value = 16;
-  $('rows').value = 1; $('cols').value = 4;
+  $('rows').value = 1; $('cols').value = 1;
   $('ori').value = 'y';
   applyPreset('tp_120_6k');
-  state.lamps = autoLamps(88, 1822, 1, 4);
+  state.lamps = autoLamps(60, 120, 1, 1);
   setLayout('auto');
 
   // spectrum card exists only in step 4 markup; create container
