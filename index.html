@@ -277,6 +277,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
     <!-- STEP 2 ---------------------------------------------------------- -->
     <section class="pstep" data-p="2">
       <h2>2 · Valgustid</h2>
+      <div id="lampBlock1">
       <label class="f" for="preset">Valgusti tüüp
         <select id="preset"></select>
       </label>
@@ -295,11 +296,13 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
         <label class="f full" id="cctxL" for="cctx" hidden>Muu värvustemperatuur (2200–7000 K)<input type="number" id="cctx" value="3000" min="2200" max="7000" step="50" inputmode="numeric"></label>
       </div>
 
+      </div>
       <div class="sub">Valgusvoog</div>
       <label class="f" for="mode">Valgusvoo määramine
         <select id="mode">
           <option value="lm" selected>Valgusvoog (lm) + CCT/Ra</option>
           <option value="ppf">PPF (µmol/s)</option>
+          <option value="strip">LED-riba</option>
         </select>
       </label>
       <div class="grid2" style="margin-top:8px">
@@ -310,6 +313,41 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
         <label class="f" id="ppfL" for="ppf" hidden>PPF (µmol/s)<input type="number" id="ppf" value="648" min="1" max="100000" step="any" inputmode="decimal"></label>
       </div>
 
+      <div id="stripBlock" hidden>
+        <div class="grid2" style="margin-top:8px">
+          <label class="f" for="sW">Riba võimsus (W/m)<input type="number" id="sW" value="18" min="0.1" max="200" step="any" inputmode="decimal"></label>
+          <label class="f" for="sEff">Riba kasutegur (µmol/J)<input type="number" id="sEff" value="2.37" min="0.1" max="4" step="any" inputmode="decimal"></label>
+        </div>
+        <p class="hint">Kinghood 2700K CRI90 valge 2,74 µmol/J Everfine + Shineon 660 nm, 5V+3P grupp, arvutus 09.11.2026</p>
+        <div class="sub">Riba kogus</div>
+        <div class="row">
+          <label><input type="radio" name="sq" id="sqA" value="pieces" checked>Tükke × pikkus</label>
+          <label><input type="radio" name="sq" id="sqB" value="total">Meetrit kokku</label>
+        </div>
+        <div class="grid2" style="margin-top:8px">
+          <label class="f" id="sNL" for="sN">Tükke (tk)<input type="number" id="sN" value="10" min="1" max="1000" step="1" inputmode="numeric"></label>
+          <label class="f" id="sLL" for="sLen">Pikkus (m)<input type="number" id="sLen" value="1.5" min="0.01" max="100" step="any" inputmode="decimal"></label>
+          <label class="f full" id="sTL" for="sTot" hidden>Meetrit kokku (m)<input type="number" id="sTot" value="12.9" min="0.01" max="10000" step="any" inputmode="decimal"></label>
+        </div>
+        <p class="hint" id="sMetOut" style="font:500 .85rem var(--mono)"></p>
+        <div class="grid2" style="margin-top:8px">
+          <label class="f" for="sUtil">Kasutustegur<input type="number" id="sUtil" value="0.75" min="0.05" max="1" step="0.01" inputmode="decimal">
+            <small class="hint">eeldus, mõõtmata</small></label>
+          <label class="f" for="sWid">Riba laius (mm)<input type="number" id="sWid" value="12" min="1" max="100" step="any" inputmode="decimal"></label>
+          <label class="f" for="sRoll">Rulli pikkus (m)<input type="number" id="sRoll" value="5" min="0.1" max="1000" step="any" inputmode="decimal"></label>
+        </div>
+        <div class="sub">Grupp (8 LED-i järjestikku)</div>
+        <div class="grid2">
+          <label class="f" for="sNW">Valgeid (tk)<input type="number" id="sNW" value="5" min="0" max="8" step="1" inputmode="numeric"></label>
+          <div class="f"><span>Punaseid (tk)</span><div id="sNR" style="font:500 .92rem var(--mono);color:var(--muted);padding:6px 0">3</div></div>
+          <label class="f" for="sVW">Vf valge (V)<input type="number" id="sVW" value="2.90" min="1" max="6" step="0.01" inputmode="decimal"></label>
+          <label class="f" for="sVR">Vf punane (V)<input type="number" id="sVR" value="1.95" min="1" max="6" step="0.01" inputmode="decimal"></label>
+          <label class="f full" for="sVS">Toitepinge (V)<input type="number" id="sVS" value="24" min="3" max="60" step="0.1" inputmode="decimal"></label>
+        </div>
+        <div class="sub">LED-riba tulemus</div>
+        <div id="stripOut" style="display:grid;gap:2px;font:500 .85rem var(--mono)"></div>
+        <p class="hint">Pindala võetakse sammust 1 (Pikkus × Laius). PPFD keskmine = PPF × kasutustegur × MF / pindala.</p>
+      </div>
       <div id="shBox" hidden>
         <div class="grid2">
           <label class="f" for="shB">Sinine 400–500 nm (%)<input type="number" id="shB" value="15" min="0" max="100" step="0.1" inputmode="decimal"></label>
@@ -855,7 +893,7 @@ function readScene() {
   const len = num('ll', 'Valgusti pikkus', 1, 400);
   const wid = num('lw', 'Valgusti laius', 1, 400);
   const watts = num('pw', 'Voolutarve', 0, 3000);
-  const mode = $('mode').value;
+  const mode = $('mode').value === 'strip' ? 'ppf' : $('mode').value;
   const cctRaw = $('cct').value;
   const cct = cctRaw === 'x' ? num('cctx', 'Värvustemperatuur', 2200, 7000) : +cctRaw;
   const cri = +$('cri').value;
@@ -1719,6 +1757,38 @@ function schedule() {
   recalcTimer = setTimeout(recalc, 150);
 }
 
+function renderStripMode() {
+  const g = id => { const v = $(id).valueAsNumber; return isFinite(v) ? v : 0; };
+  const byTot = $('sqB').checked;
+  const totM = byTot ? g('sTot') : g('sN') * g('sLen');
+  $('sMetOut').textContent = 'Metraaž kokku: ' + fmt(totM, 2) + ' m';
+  const nW = Math.min(8, Math.max(0, Math.round(g('sNW'))));
+  const nR = 8 - nW;
+  $('sNR').textContent = nR;
+  const vLed = nW * g('sVW') + nR * g('sVR');
+  const vS = g('sVS');
+  const spare = vS - vLed;
+  const loss = vS > 0 ? spare / vS * 100 : 0;
+  const watts = g('sW') * totM;
+  const ppf = watts * g('sEff');
+  const area = (g('l') * g('w')) / 10000;
+  const ppfd = area > 0 ? ppf * g('sUtil') * g('mf') / area : 0;
+  const rolls = g('sRoll') > 0 ? Math.ceil(totM / g('sRoll') - 1e-9) : 0;
+  const rows = [
+    ['Koguvõimsus', fmt(watts, 1) + ' W'],
+    ['PPF', fmt(ppf, 1) + ' µmol/s'],
+    ['PPFD keskmine', fmt(ppfd, 1) + ' µmol/m²/s'],
+    ['Pindala', fmt(area, 2) + ' m²'],
+    ['Võimsus pinna kohta', fmt(area > 0 ? watts / area : 0, 1) + ' W/m²'],
+    ['Riba pinna kohta', fmt(area > 0 ? totM / area : 0, 2) + ' m/m²'],
+    ['Rulle vaja', rolls + ' tk (' + fmt(g('sRoll'), 1) + ' m rull, riba ' + fmt(g('sWid'), 0) + ' mm)'],
+    ['LED-ide pinge kokku', fmt(vLed, 2) + ' V'],
+    ['Ülejääk', fmt(spare, 2) + ' V'],
+    ['Kadu grupis (takisti / lineaarregulaatori soojus)', fmt(loss, 1) + ' %']
+  ];
+  $('stripOut').innerHTML = rows.map(r => '<div style="display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding:3px 0"><span>' + r[0] + '</span><b>' + r[1] + '</b></div>').join('');
+}
+
 function recalc() {
   const t0 = performance.now();
   const { sc, errs } = readScene();
@@ -1734,6 +1804,7 @@ function recalc() {
   if (lmwOut) lmwOut.textContent = (sc.fix.lm != null && sc.fix.watts > 0)
     ? '= ' + fmt(sc.fix.lm / sc.fix.watts, 0) + ' lm/W' : '—';
 
+  renderStripMode();
   renderStrip();
   renderStats();
   renderGuide();
@@ -1832,13 +1903,18 @@ function markCustom() {
 function syncUI() {
   const mode = $('mode').value;
   const has = !!state.ies;
+  $('lampBlock1').hidden = mode === 'strip';
+  $('stripBlock').hidden = mode !== 'strip';
   $('lmL').hidden = mode !== 'lm';
   $('lmwL').hidden = mode !== 'lm';
   $('ppfL').hidden = mode !== 'ppf';
   $('cct').parentNode.hidden = mode !== 'lm';
   $('cri').parentNode.hidden = mode !== 'lm';
   $('cctxL').hidden = mode !== 'lm' || $('cct').value !== 'x';
-  $('shBox').hidden = mode === 'lm';
+  $('shBox').hidden = mode !== 'ppf';
+  $('sTL').hidden = !$('sqB').checked;
+  $('sNL').hidden = $('sqB').checked;
+  $('sLL').hidden = $('sqB').checked;
   $('beamC0').disabled = $('beamC90').disabled = has;
   $('beamHint').textContent = has
     ? 'Jaotus tuleb IES/LDT failist, nurki ei kasutata.'
@@ -1894,6 +1970,8 @@ $('preset').addEventListener('change', e => applyPreset(e.target.value));
 
 $('mode').addEventListener('change', () => { syncUI(); schedule(); });
 $('cct').addEventListener('change', syncUI);
+['sW','sEff','sN','sLen','sTot','sUtil','sWid','sRoll','sNW','sVW','sVR','sVS','sqA','sqB'].forEach(id => $(id).addEventListener('input', () => { syncUI(); schedule(); }));
+['sqA','sqB'].forEach(id => $(id).addEventListener('change', () => { syncUI(); schedule(); }));
 
 ['ll', 'lw', 'pw', 'lm', 'cct', 'cri', 'cctx', 'beamC0', 'beamC90', 'ppf', 'shB', 'shG', 'shR', 'shFR']
   .forEach(id => $(id).addEventListener('input', markCustom));
