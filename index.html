@@ -2,7 +2,7 @@
 <html lang="et">
 <head>
 <meta charset="utf-8">
-<title>Kasvuvalguse kalkulaator V3.15</title>
+<title>Kasvuvalguse kalkulaator V3.16</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -240,7 +240,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
   <div class="topbar">
     <div class="brand">
       <h1>Kasvuvalguse kalkulaator</h1>
-      <span class="tag">V3.15 · 12.11.2026</span>
+      <span class="tag">V3.16 · 21.11.2026</span>
     </div>
     <div class="topact">
       <div class="seg" id="themeSeg" role="group" aria-label="Teema">
@@ -248,6 +248,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
         <button type="button" data-t="dark">Roheline</button>
         <button type="button" data-t="blue">Sinine</button>
       </div>
+      <button type="button" id="linkBtn" title="Kopeeri link, mis avab täpselt selle seadistuse">Kopeeri link</button>
       <button type="button" id="printBtn" class="pri">Prindi / PDF</button>
     </div>
   </div>
@@ -529,7 +530,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
         <div class="rep-head">
           <div>
             <h1>Kasvuvalguse arvutusaruanne</h1>
-            <div class="rep-sub">Kasvuvalguse kalkulaator V3.15 · punktvalgusallikate mudel</div>
+            <div class="rep-sub">Kasvuvalguse kalkulaator V3.16 · punktvalgusallikate mudel</div>
           </div>
           <div class="rep-sub" id="repMeta"></div>
         </div>
@@ -559,7 +560,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
 <script>
 'use strict';
 /* =====================================================================
-   Kasvuvalguse kalkulaator V3.15
+   Kasvuvalguse kalkulaator V3.16
    Grow-light PPFD calculator: point sources + wall mirrors, C0/C90 or IES.
    Light output is given in lm / PPF / µmol/J × W – never derived from watts.
    ===================================================================== */
@@ -2101,6 +2102,7 @@ function recalc() {
   else if (state.view === '3d') build3D();
 
   if (state.step === 5) refreshReport();
+  linkSaveSoon();
 }
 
 /* =====================================================================
@@ -2791,6 +2793,108 @@ function pcbInit() {
   $('pcbHours').addEventListener('input', e => { const v = e.target.valueAsNumber; if (isFinite(v) && v >= 0 && v <= 24) { $('hours').value = v; schedule(); } });
 }
 
+/* =====================================================================
+   v3_16: jagatav seadistuse link (#s=...) – kogu seadistus aadressis
+   Vorming: #s=<base64url(JSON)>, JSON = { v:1, f:{id:väärtus}, lay, lamps:[[x,y,rot]], pcb:[[kind,K,cri,n,model]], st }
+   f hoiab ainult vaikimisi väärtusest erinevaid välju. IES/LDT faili lingis ei ole.
+   Uued väljad: lisa ainult juurde, ära nimeta id-sid ümber (vanad lingid peavad töötama).
+   ===================================================================== */
+const LINK_SKIP = { iesf: 1, csvbuf: 1, pcbK: 1, pcbCri: 1, pAuto: 1, pMan: 1 };
+let linkDefaults = null, linkDefaultHash = '', linkTimer = null, linkLast = '';
+function linkFields() {
+  return Array.prototype.filter.call(document.querySelectorAll('.panel input[id], .panel select[id], #underlay, #mapQ, #nums, #smooth'),
+    el => !LINK_SKIP[el.id] && el.type !== 'file' && el.type !== 'button');
+}
+function linkVal(el) { return (el.type === 'checkbox' || el.type === 'radio') ? (el.checked ? 1 : 0) : el.value; }
+function linkSnapshot() { const o = {}; linkFields().forEach(el => { o[el.id] = linkVal(el); }); return o; }
+function b64uEnc(s) { return btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function b64uDec(s) { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return decodeURIComponent(escape(atob(s))); }
+function linkEncode() {
+  const cur = linkSnapshot(), f = {};
+  Object.keys(cur).forEach(k => { if (!linkDefaults || linkDefaults[k] !== cur[k]) f[k] = cur[k]; });
+  const o = { v: 1, f };
+  if (state.layout === 'manual') {
+    o.lay = 'manual';
+    o.lamps = state.lamps.map(l => [Math.round(l.x * 10) / 10, Math.round(l.y * 10) / 10, Math.round((l.rot || 0) * 10) / 10]);
+  }
+  if (pcb.types.length) o.pcb = pcb.types.map(t => [t.kind, t.K || 0, t.cri || 0, t.n || 1, t.model ? 1 : 0]);
+  if (pcb.plant) { o.pl = pcb.plant; o.ps = pcb.stage; }
+  if (state.step !== 1) o.st = state.step;
+  if (state.ies) o.ies = 1;
+  return b64uEnc(JSON.stringify(o));
+}
+function linkUrl() { return location.href.split('#')[0] + '#s=' + linkEncode(); }
+function linkSave() {
+  if (!linkDefaults) return;
+  let h = '#s=' + linkEncode();
+  if (h === linkDefaultHash && !location.hash) h = ''; // puhas aadress, kui midagi pole muudetud
+  if (h === linkLast) return;
+  linkLast = h;
+  try { history.replaceState(null, '', location.pathname + location.search + h); } catch (err) {}
+}
+function linkSaveSoon() { clearTimeout(linkTimer); linkTimer = setTimeout(linkSave, 400); }
+/* returns {ok, ies, err} or null when the address has no setup */
+function linkRestore() {
+  const m = /[#&]s=([A-Za-z0-9_-]+)/.exec(location.hash);
+  if (!m) return null;
+  let o;
+  try { o = JSON.parse(b64uDec(m[1])); } catch (err) { return { ok: false, err: 'link on vigane' }; }
+  if (!o || typeof o !== 'object' || !o.f) return { ok: false, err: 'link on vigane' };
+  if (Array.isArray(o.pcb)) {
+    pcb.types = [];
+    o.pcb.forEach(a => { if (Array.isArray(a)) { const t = pcbAdd(String(a[0]), +a[1] || 0, +a[2] || 0, +a[3] || 1); if (a[4]) t.model = true; } });
+    if (o.pcb.some(a => a && a[4])) pcb.types.forEach(t => { if (t.model) { const L = pcbLib(t); t.mA = L.mA; t.vf = L.vf; t.ppe = L.umolJ; } });
+    pcbRenderRows();
+  }
+  if (o.pl) { pcb.plant = String(o.pl); if (o.ps) pcb.stage = String(o.ps); $('pcbPlant').value = pcb.plant; plantFill(); }
+  linkFields().forEach(el => {
+    if (!(el.id in o.f) || el.id === 'pcbPlant') return;
+    const v = o.f[el.id];
+    if (el.type === 'checkbox' || el.type === 'radio') el.checked = !!v;
+    else el.value = v;
+  });
+  if (o.f.preset === 'free') { const opt = Array.prototype.find.call($('preset').options, x => x.value === 'free'); if (opt) opt.textContent = 'Vabalt määratud (muudetud)'; }
+  state.mapQ = $('mapQ').value;
+  if (o.lay === 'manual' && Array.isArray(o.lamps) && o.lamps.length) {
+    state.lamps = o.lamps.filter(Array.isArray).map(a => ({ x: +a[0] || 0, y: +a[1] || 0, rot: +a[2] || 0 }));
+    setLayout('manual');
+  } else {
+    const W = $('w').valueAsNumber || 60, L = $('l').valueAsNumber || 120;
+    state.lamps = autoLamps(W, L, Math.round($('rows').valueAsNumber || 1), Math.round($('cols').valueAsNumber || 1));
+    setLayout('auto');
+  }
+  return { ok: true, ies: !!o.ies, st: +o.st || 1 };
+}
+function linkNotice(r) {
+  if (!r) return;
+  const msg = $('msg');
+  const t = !r.ok ? 'Seadistuse link on vigane, avati vaikeseadistus.'
+    : r.ies ? 'Seadistus avati lingist. NB: IES/LDT fail ei ole lingis, laadi see uuesti.' : '';
+  if (t) { msg.textContent = t; msg.hidden = false; }
+}
+$('linkBtn').addEventListener('click', () => {
+  const t = linkUrl(), btn = $('linkBtn'), old = btn.textContent;
+  linkSave();
+  const done = () => { btn.textContent = 'Link kopeeritud'; setTimeout(() => btn.textContent = old, 1500); };
+  const fb = () => {
+    const ta = $('csvbuf'); ta.value = t; ta.select();
+    try { document.execCommand('copy'); } catch (err) {}
+    done();
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done).catch(fb);
+  else fb();
+});
+document.addEventListener('input', linkSaveSoon);
+document.addEventListener('change', linkSaveSoon);
+window.addEventListener('hashchange', () => {
+  if (location.hash === linkLast) return;
+  const r = linkRestore();
+  if (!r) return;
+  linkLast = location.hash;
+  syncUI(); recalc(); if (r.ok && r.st) goStep(r.st);
+  if (!r.ok || r.ies) linkNotice(r);
+});
+
 function init() {
   pcbInit();
   // theme
@@ -2843,14 +2947,20 @@ function init() {
     }
   }
 
+  linkDefaults = linkSnapshot(); // v3_16: vaikeväärtused, lingis hoitakse ainult erinevusi
+  linkDefaultHash = '#s=' + linkEncode();
+  const linked = linkRestore();
   syncUI();
   recalc();
   loadThree();
   setView('3d'); // vaikevaade avamisel = 3D (Junn 03.11)
+  if (linked && linked.ok && linked.st > 1) goStep(linked.st);
+  linkNotice(linked);
+  linkLast = location.hash;
   selfTest();
 }
 
 init();
 </script>
 </body>
-</html>
+</html>
