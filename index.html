@@ -2,7 +2,7 @@
 <html lang="et">
 <head>
 <meta charset="utf-8">
-<title>Kasvuvalguse kalkulaator V3.16</title>
+<title>Kasvuvalguse kalkulaator V3.17</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -91,7 +91,7 @@ button:hover{border-color:var(--accent)}
 button:disabled{opacity:.45;cursor:not-allowed}
 button.pri{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
 button.mini{padding:2px 7px;font-size:.78rem}
-input[type=number],select,textarea{width:100%;font:500 .92rem var(--mono);font-variant-numeric:tabular-nums;
+input[type=number],input.num,select,textarea{width:100%;font:500 .92rem var(--mono);font-variant-numeric:tabular-nums;
   color:var(--fg);background:var(--field);border:1px solid var(--line);border-radius:4px;padding:6px 8px;min-width:0}
 input[type=file]{width:100%;min-width:0;font:.78rem var(--sans);color:var(--fg)}
 textarea{resize:vertical;min-height:76px}
@@ -162,7 +162,14 @@ canvas{display:block;touch-action:pan-y}
 table{border-collapse:collapse;font:.76rem var(--mono);font-variant-numeric:tabular-nums}
 th,td{border:1px solid var(--line);padding:3px 7px;text-align:right;white-space:nowrap}
 thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
-#lampTable td input{width:64px;padding:2px 4px;font-size:.76rem}
+#lampTable td input{width:64px;}
+#lampTable td select{width:auto;padding:2px;font-size:.74rem}
+.gridbox{margin-top:10px;border-top:1px solid var(--line, #ccd);padding-top:8px}
+.gridbox summary{cursor:pointer;font-weight:600;font-size:.84rem}
+.gridbox .grid2{margin-top:6px}
+#typeList{margin:6px 0 0;padding-left:18px;font-size:.8rem}
+#typeList button{margin-left:6px}
+#lampTable td input{padding:2px 4px;font-size:.76rem}
 #lampTable td:first-child{color:var(--muted)}
 .sbar{display:flex;height:20px;border-radius:4px;overflow:hidden;background:var(--track);margin-bottom:8px}
 .sbar span{display:block;min-width:0}
@@ -222,7 +229,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
 }
 .pcbrow{display:grid;grid-template-columns:minmax(0,1.7fr) auto minmax(0,.8fr) minmax(0,.8fr) minmax(0,.9fr) auto;gap:6px;align-items:start;padding:5px 0;border-bottom:1px solid var(--line)}
 .pcbrow.hd{font-size:.68rem;color:var(--muted);align-items:end;padding-bottom:3px}
-.pcbrow input[type=number]{padding:4px 5px;font-size:.82rem}
+.pcbrow input[type=number],.pcbrow input.num{padding:4px 5px;font-size:.82rem}
 .pcbnm{font-size:.8rem;line-height:1.25;min-width:0;overflow-wrap:anywhere}
 .pcbnm small{display:block;font-size:.66rem;color:var(--muted)}
 .pcbcnt{display:flex;align-items:center;gap:4px;font:600 .85rem var(--mono)}
@@ -240,7 +247,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
   <div class="topbar">
     <div class="brand">
       <h1>Kasvuvalguse kalkulaator</h1>
-      <span class="tag">V3.16 · 21.11.2026</span>
+      <span class="tag">V3.17 · 21.11.2026</span>
     </div>
     <div class="topact">
       <div class="seg" id="themeSeg" role="group" aria-label="Teema">
@@ -298,10 +305,11 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
       <p class="hint">Tüüpilised hinnangulised väärtused, mitte mõõdetud; täpsuse jaoks laadi tootja IES/LDT fail.</p>
 
       <div class="grid2" style="margin-top:8px">
-        <label class="f" for="ll">Pikkus (cm)<input type="number" id="ll" value="120" min="1" max="400" step="1" inputmode="decimal"></label>
-        <label class="f" for="lw">Laius (cm)<input type="number" id="lw" value="7" min="1" max="400" step="1" inputmode="decimal"></label>
+        <label class="f" for="ll">Pikkus (cm)<input type="number" id="ll" value="120" min="0.1" max="400" step="1" inputmode="decimal"></label>
+        <label class="f" for="lw">Laius (cm)<input type="number" id="lw" value="7" min="0.1" max="400" step="1" inputmode="decimal"></label>
         <label class="f" for="pw">Voolutarve (W)<input type="number" id="pw" value="40" min="0" max="3000" step="1" inputmode="decimal">
           <small class="hint">tootja nimivõimsus; valgust vattidest ei tuletata</small></label>
+        <small class="hint" id="dimMm" style="grid-column:1/-1;margin-top:-4px">Mõõdud sentimeetrites: 45 mm = 4,5 cm. Koma ja punkt mõlemad sobivad.</small>
         <label class="f" for="cct">Värvustemperatuur (K)
           <select id="cct"><option>2700</option><option>3000</option><option>3500</option><option>4000</option>
             <option>5000</option><option>5700</option><option>6000</option><option>6500</option><option value="x">muu</option></select></label>
@@ -530,7 +538,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
         <div class="rep-head">
           <div>
             <h1>Kasvuvalguse arvutusaruanne</h1>
-            <div class="rep-sub">Kasvuvalguse kalkulaator V3.16 · punktvalgusallikate mudel</div>
+            <div class="rep-sub">Kasvuvalguse kalkulaator V3.17 · punktvalgusallikate mudel</div>
           </div>
           <div class="rep-sub" id="repMeta"></div>
         </div>
@@ -542,6 +550,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
   <!-- ============ LUMINAIRE LIST ============ -->
   <aside class="lamps card">
     <h2>Valgustite loend</h2>
+    <p class="note" style="margin:0 0 6px">Kõik valgustid, mis arvutusse lähevad. Üks rida = üks valgusti; x ja y on selle keskkoht ruumis (cm, 0 = vasak ülanurk). Ühe kaupa lisab „+ Lisa“. Palju korraga (nt LED-moodulid) lisab „Lisa ruudustikuna“ allpool. Eri valgustid koos: vt „Valgusti tüübid“.</p>
     <div class="scroll" style="max-height:440px">
       <table id="lampTable">
         <thead><tr><th>nr</th><th>x (cm)</th><th>y (cm)</th><th>tüüp</th><th title="Valgusvoog, lm">lm</th><th title="PPF, µmol/s">PPF</th><th title="Voolutarve, W">W</th><th>suund</th><th></th></tr></thead>
@@ -553,6 +562,34 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
       <button type="button" id="delLamp" class="mini">Kustuta viimane</button>
     </div>
     <p class="note" id="lampNote"></p>
+
+    <details class="gridbox" id="gridBox" open>
+      <summary>Lisa ruudustikuna (palju valgusteid korraga)</summary>
+      <div class="grid2">
+        <label class="f" for="gT">Tüüp<select id="gT"></select></label>
+        <label class="chk" for="gRot" style="align-self:end"><input type="checkbox" id="gRot">pööra 90°</label>
+        <label class="f" for="gC">Veerge (üle laiuse, x)<input type="number" id="gC" value="1" inputmode="numeric"></label>
+        <label class="f" for="gR">Ridu (piki pikkust, y)<input type="number" id="gR" value="1" inputmode="numeric"></label>
+        <label class="f" for="gX0">Esimese x (cm)<input type="number" id="gX0" value="10"></label>
+        <label class="f" for="gY0">Esimese y (cm)<input type="number" id="gY0" value="10"></label>
+        <label class="f" for="gDX">Vahe x (cm)<input type="number" id="gDX" value="10"></label>
+        <label class="f" for="gDY">Vahe y (cm)<input type="number" id="gDY" value="10"></label>
+      </div>
+      <p class="note" id="gInfo"></p>
+      <div class="row">
+        <button type="button" id="gAdd" class="mini">Lisa juurde</button>
+        <button type="button" id="gRep" class="mini">Asenda sama tüübi omad</button>
+        <button type="button" id="gClr" class="mini">Kustuta kõik</button>
+      </div>
+    </details>
+
+    <details class="gridbox" id="typeBox">
+      <summary>Valgusti tüübid (eri valgustid koos)</summary>
+      <p class="note">Vaikimisi on kõik valgustid sammu 2 valgusti. Teise valgusti lisamiseks: seadista see sammus 2, pane nimi ja vajuta „Salvesta tüübiks“. Siis seadista sammus 2 järgmine valgusti. Ruudustiku ja tabeli „tüüp“ valikus saad tüüpe segada.</p>
+      <label class="f" for="typeName">Nimi<input type="text" id="typeName" placeholder="nt 2×T8 korpus 150 cm"></label>
+      <div class="row"><button type="button" id="typeSave" class="mini">Salvesta sammu 2 valgusti tüübiks</button></div>
+      <ul id="typeList"></ul>
+    </details>
   </aside>
 
 </main>
@@ -560,7 +597,7 @@ thead th,tbody th{background:var(--surface2);color:var(--muted);font-weight:500}
 <script>
 'use strict';
 /* =====================================================================
-   Kasvuvalguse kalkulaator V3.16
+   Kasvuvalguse kalkulaator V3.17
    Grow-light PPFD calculator: point sources + wall mirrors, C0/C90 or IES.
    Light output is given in lm / PPF / µmol/J × W – never derived from watts.
    ===================================================================== */
@@ -601,7 +638,8 @@ const TARGETS = [
 const state = {
   step: 1, view: '3d', layout: 'auto',
   lamps: [], ies: null, scene: null, result: null, calcMs: 0,
-  mapQ: 'tot'
+  mapQ: 'tot',
+  types: [] // v3_17: salvestatud lisatüübid; lamp.t = 0 (sammu 2 valgusti) või 1..n
 };
 
 /* ---------------- formatting helpers ---------------- */
@@ -1131,8 +1169,8 @@ function readScene() {
   const hours = num('hours', 'Töötunnid', 0, 24);
 
   /* luminaire */
-  let len = num('ll', 'Valgusti pikkus', 1, 400);
-  let wid = num('lw', 'Valgusti laius', 1, 400);
+  let len = num('ll', 'Valgusti pikkus', 0.1, 400);
+  let wid = num('lw', 'Valgusti laius', 0.1, 400);
   let watts = num('pw', 'Voolutarve', 0, 3000);
   const isStrip = $('mode').value === 'strip';
   const isPcb = $('mode').value === 'pcb';
@@ -1189,6 +1227,8 @@ function readScene() {
     var stripWatts = wm * sg.runLen / 100;
   }
   const lmw = (lm != null && watts > 0) ? lm / watts : null;
+  if (lmw != null && lmw > 250) errs.push('valgusviljakus ' + fmt(lmw, 0) + ' lm/W on võimatu (parimad LED-id ~150–220 lm/W). Kontrolli valgusvoogu (lm) ja voolutarvet (W)');
+  if (mode === 'ppf' && !isStrip && !isPcb && watts > 0 && ppf / watts > 4.5) errs.push('PPF ' + fmt(ppf / watts, 2) + ' µmol/J on võimatu (parimad ~3–3,5). Kontrolli PPF-i ja voolutarvet');
 
   /* beams */
   const beamC0 = isStrip ? 120 : IES ? 120 : num('beamC0', 'Poolväärtusnurk C0', 10, 179);
@@ -1205,6 +1245,7 @@ function readScene() {
     state.lamps.forEach(l => {
       l.x = Math.min(W, Math.max(0, l.x));
       l.y = Math.min(L, Math.max(0, l.y));
+      if (l.t && !state.types[l.t - 1]) l.t = 0;
     });
     useLamps = state.lamps;
   }
@@ -1217,7 +1258,8 @@ function readScene() {
       W, L, roomH, mount, plane, h, step, rho, mf, hours,
       ori: isStrip ? 'y' : $('ori').value, strip: sg,
       rows, cols,
-      lamps: useLamps.map(l => ({ x: l.x, y: l.y, rot: l.rot || 0 })),
+      lamps: useLamps.map(l => ({ x: l.x, y: l.y, rot: l.rot || 0, t: isStrip ? 0 : (l.t || 0) })),
+      types: isStrip ? [] : state.types.map(t => Object.assign({}, t, { ies: null })),
       fix: isStrip ? { len: sg.runLen, wid: Math.max(0.1, ($('sWid').valueAsNumber || 12) / 10), watts: stripWatts, lm: null, lmw: null, ppf, f: null, sh, beamC0, beamC90, ies: null, mode: 'ppf', label: 'LED-riba', strip: 5 } :
       { len, wid, watts, lm, lmw, ppf, f, sh, beamC0, beamC90, ies: IES, mode, label: isPcb ? 'LED-plaat' : presetName }
     }
@@ -1258,7 +1300,7 @@ function renderStrip() {
 function renderStats() {
   const sc = state.scene, r = state.result;
   if (!sc || !r) return;
-  const sh = sc.fix.sh, area = sc.W * sc.L / 1e4;
+  const sh = r.sh || sc.fix.sh, area = sc.W * sc.L / 1e4;
   const items = [
     ['Keskmine PPFD', fmt(r.avg), 'µmol/m²/s', ''],
     ['Minimaalne', fmt(r.min), 'µmol/m²/s', ''],
@@ -1386,31 +1428,46 @@ function renderLampTable() {
   if (!sc) return;
   const man = state.layout === 'manual';
   const tb = $('lampBody');
-  const lmTxt = sc.fix.lm != null ? fmt(sc.fix.lm, 0) : '—';
-  const sig = sc.lamps.length + ':' + man + ':' + sc.lamps.map(l => l.rot || 0).join('') + ':' + lmTxt;
+  const MAXROWS = 300;
+  const nT = sc.types ? sc.types.length : 0;
+  const lmTxt = f => f.lm != null ? fmt(f.lm, 0) : '—';
+  const sig = sc.lamps.length + ':' + man + ':' + nT + ':' + sc.lamps.slice(0, MAXROWS).map(l => (l.rot || 0) + '' + (l.t || 0)).join('') + ':' + lmTxt(sc.fix) + ':' + sc.fix.label;
   if (tb.dataset.sig !== sig) {
     tb.dataset.sig = sig;
-    tb.innerHTML = sc.lamps.map((l, i) =>
-      '<tr>' +
+    const typeCell = (l, i) => {
+      if (!nT) return escH(sc.fix.label || '—');
+      return '<select data-ti="' + i + '" ' + (man ? '' : 'disabled') + '><option value="0">' + escH(sc.fix.label || 'Sammu 2 valgusti') + '</option>' +
+        sc.types.map((t, k) => '<option value="' + (k + 1) + '"' + (l.t === k + 1 ? ' selected' : '') + '>T' + (k + 1) + ' ' + escH(t.label) + '</option>').join('') + '</select>';
+    };
+    tb.innerHTML = sc.lamps.slice(0, MAXROWS).map((l, i) => {
+      const f = lampFix(sc, l);
+      return '<tr>' +
       '<td>' + (i + 1) + '</td>' +
-      '<td><input type="number" data-i="' + i + '" data-k="x" value="' + fmt(l.x, 0) + '" step="1" ' + (man ? '' : 'disabled') + '></td>' +
-      '<td><input type="number" data-i="' + i + '" data-k="y" value="' + fmt(l.y, 0) + '" step="1" ' + (man ? '' : 'disabled') + '></td>' +
-      '<td style="text-align:left">' + (sc.fix.label || '—') + '</td>' +
-      '<td>' + lmTxt + '</td>' +
-      '<td>' + fmt(sc.fix.ppf, 0) + '</td>' +
-      '<td>' + fmt(sc.fix.watts, 0) + '</td>' +
+      '<td><input type="number" data-i="' + i + '" data-k="x" value="' + fmt(l.x, l.x % 1 ? 1 : 0) + '" step="1" ' + (man ? '' : 'disabled') + '></td>' +
+      '<td><input type="number" data-i="' + i + '" data-k="y" value="' + fmt(l.y, l.y % 1 ? 1 : 0) + '" step="1" ' + (man ? '' : 'disabled') + '></td>' +
+      '<td style="text-align:left">' + typeCell(l, i) + '</td>' +
+      '<td>' + lmTxt(f) + '</td>' +
+      '<td>' + fmt(f.ppf, 0) + '</td>' +
+      '<td>' + fmt(f.watts, f.watts < 10 ? 2 : 0) + '</td>' +
       '<td><button type="button" class="mini" data-rot="' + i + '" ' + (man ? '' : 'disabled') + '>' + (l.rot ? '90°' : '0°') + '</button></td>' +
       '<td><button type="button" class="mini" data-del="' + i + '" ' + (man ? '' : 'disabled') + '>×</button></td>' +
-      '</tr>').join('');
+      '</tr>';
+    }).join('') + (sc.lamps.length > MAXROWS ? '<tr><td colspan="9" style="text-align:left">… ja veel ' + (sc.lamps.length - MAXROWS) + ' valgustit (tabelis näidatakse esimesed ' + MAXROWS + ', arvutuses on kõik)</td></tr>' : '');
+    decimalize(tb);
   } else {
     Array.prototype.forEach.call(tb.querySelectorAll('input[data-k]'), inp => {
       if (document.activeElement === inp) return;
       const i = +inp.dataset.i, k = inp.dataset.k;
-      if (sc.lamps[i]) inp.value = fmt(sc.lamps[i][k], 0);
+      if (sc.lamps[i]) inp.value = fmt(sc.lamps[i][k], sc.lamps[i][k] % 1 ? 1 : 0);
     });
   }
-  $('lampNote').textContent = (man ? 'Käsitsi: ' : 'Automaatne: ') + sc.lamps.length +
-    ' valgustit. Kõigil sama valgusvoog, jaotus ja kõrgus.' + (man ? '' : ' Lohista plaanil või vajuta „Käsitsi“, et muuta.');
+  const cnt = {};
+  sc.lamps.forEach(l => { const k = l.t || 0; cnt[k] = (cnt[k] || 0) + 1; });
+  const parts = Object.keys(cnt).map(k => (+k ? 'T' + k + ' ' + sc.types[k - 1].label : (sc.fix.label || 'sammu 2 valgusti')) + ' × ' + cnt[k]);
+  $('lampNote').textContent = (man ? 'Käsitsi: ' : 'Automaatne: ') + sc.lamps.length + ' valgustit' +
+    (nT ? ' (' + parts.join(', ') + ').' : '. Kõigil sama valgusti (samm 2) ja kõrgus.') +
+    (man ? '' : ' Lohista plaanil või vajuta „Käsitsi“, et muuta.');
+  renderTypeUI();
 }
 
 /* =====================================================================
@@ -1496,7 +1553,7 @@ function drawPlan() {
   // luminaires
   sc.lamps.forEach((lamp, idx) => {
     const base = (sc.ori === 'x' ? 0 : Math.PI / 2) + (lamp.rot ? Math.PI / 2 : 0);
-    const rw = Math.max(sc.fix.len * s, 8), rh = Math.max(sc.fix.wid * s, 6);
+    const lf = lampFix(sc, lamp), rw = Math.max(lf.len * s, 8), rh = Math.max(lf.wid * s, 6);
     const cx = ml + lamp.x * s, cy = mt + lamp.y * s;
     c.save();
     c.translate(cx, cy); c.rotate(base);
@@ -1662,7 +1719,7 @@ function paintMap(cv, opt) {
 
   // luminaire markers
   sc.lamps.forEach(lamp => {
-    const rw = Math.max(sc.fix.len * s, 6), rh = Math.max(sc.fix.wid * s, 5);
+    const lf = lampFix(sc, lamp), rw = Math.max(lf.len * s, 6), rh = Math.max(lf.wid * s, 5);
     const x0 = ml + lamp.x * s - rw / 2, y0 = mt + lamp.y * s - rh / 2;
     c.lineWidth = 3; c.strokeStyle = '#ffffff'; c.strokeRect(x0, y0, rw, rh);
     c.lineWidth = 1.4; c.strokeStyle = '#0a1a10'; c.strokeRect(x0, y0, rw, rh);
@@ -1885,13 +1942,15 @@ function build3D() {
 
   sc.lamps.forEach(lamp => {
     const base = (sc.ori === 'x' ? 0 : Math.PI / 2) + (lamp.rot ? Math.PI / 2 : 0);
-    const bx = new THREE.Mesh(new THREE.BoxGeometry(lenM, sc.strip ? 0.012 : 0.03, widM), boxMat);
+    const lf = lampFix(sc, lamp);
+    const bx = new THREE.Mesh(new THREE.BoxGeometry(lf === sc.fix ? lenM : lf.len / 100, sc.strip ? 0.012 : 0.03, lf === sc.fix ? widM : lf.wid / 100), boxMat);
     bx.position.set(lamp.x / 100 - W / 2, yLamp, lamp.y / 100 - L / 2);
     bx.rotation.y = -base;
     g.add(bx);
 
     // cone half angle from the mean of C0/C90 beams
-    const half = Math.min(Math.max((sc.fix.beamC0 + sc.fix.beamC90) / 4, 5), 88) * Math.PI / 180;
+    if (sc.lamps.length > 150) return; // palju mooduleid: koonuseid ei joonista (kiirus)
+    const half = Math.min(Math.max((lf.beamC0 + lf.beamC90) / 4, 5), 88) * Math.PI / 180;
     const rad = Math.tan(half) * hM;
     const cone = new THREE.Mesh(new THREE.ConeGeometry(rad, hM, 20, 1, true), wireMat);
     cone.geometry.translate(0, -hM / 2, 0);
@@ -1976,7 +2035,7 @@ function refreshReport() {
     '<th>Voolutarve kokku</th><td>' + fmt(r.totalW, 0) + ' W</td></tr>' +
     '<tr><th>Kogu-PPF</th><td>' + fmt(r.totalPPF, 0) + ' µmol/s</td>' +
     '<th>Süsteemi efektiivsus</th><td>' + (r.totalW > 0 ? fmt(r.totalPPF / r.totalW, 2) : '–') + ' µmol/J</td></tr>' +
-    '<tr><th>Võimsustihedus</th><td colspan="3">' + fmt(r.totalW / area, 0) + ' W/m²</td></tr></table>';
+    '<tr><th>Võimsustihedus</th><td colspan="3">' + fmt(r.totalW / area, 0) + ' W/m²</td></tr></table>' + typesReportHtml(sc);
 
   h += '<h2>Tulemused</h2><div class="rep-cols"><table>' +
     '<tr><th>Keskmine PPFD</th><td><b>' + fmt(r.avg) + '</b> µmol/m²/s</td></tr>' +
@@ -2076,7 +2135,7 @@ function recalc() {
   const t0 = performance.now();
   const { sc, errs } = readScene();
   state.scene = sc;
-  state.result = computeField(sc);
+  state.result = computeMulti(sc);
   state.calcMs = performance.now() - t0;
 
   const msg = $('msg');
@@ -2085,7 +2144,10 @@ function recalc() {
 
   const lmwOut = $('lmwOut');
   if (lmwOut) lmwOut.textContent = (sc.fix.lm != null && sc.fix.watts > 0)
-    ? '= ' + fmt(sc.fix.lm / sc.fix.watts, 0) + ' lm/W' : '—';
+    ? '= ' + fmt(sc.fix.lm / sc.fix.watts, 0) + ' lm/W' + (sc.fix.lm / sc.fix.watts > 250 ? ' ⚠ võimatu' : '') : '—';
+  if (lmwOut) lmwOut.style.color = (sc.fix.lm != null && sc.fix.watts > 0 && sc.fix.lm / sc.fix.watts > 250) ? 'var(--danger)' : '';
+  const dm = $('dimMm');
+  if (dm) dm.textContent = 'Mõõdud sentimeetrites (= ' + fmt(sc.fix.len * 10, sc.fix.len < 10 ? 1 : 0) + ' × ' + fmt(sc.fix.wid * 10, sc.fix.wid < 10 ? 1 : 0) + ' mm). 45 mm = 4,5 cm. Koma ja punkt mõlemad sobivad.';
 
   renderStripMode();
   renderPcb();
@@ -2268,7 +2330,7 @@ $('cct').addEventListener('change', syncUI);
 ['sqA','sqB'].forEach(id => $(id).addEventListener('change', () => { syncUI(); schedule(); }));
 
 ['ll', 'lw', 'pw', 'lm', 'cct', 'cri', 'cctx', 'beamC0', 'beamC90', 'ppf', 'shB', 'shG', 'shR', 'shFR']
-  .forEach(id => $(id).addEventListener('input', markCustom));
+  .forEach(id => $(id).addEventListener('input', () => { markCustom(); schedule(); })); // v3_17: arvuta kohe (enne jäi vana tulemus ette)
 
 document.querySelectorAll('input[name=place]').forEach(el => el.addEventListener('change', () => {
   setLayout($('pMan').checked ? 'manual' : 'auto', $('pAuto').checked);
@@ -2303,6 +2365,14 @@ $('lampBody').addEventListener('input', e => {
   state.lamps[i][k] = v;
   if (state.layout !== 'manual') setLayout('manual');
   drawPlan();
+  schedule();
+});
+$('lampBody').addEventListener('change', e => {
+  const sel = e.target.closest('select[data-ti]');
+  if (!sel) return;
+  const i = +sel.dataset.ti;
+  if (state.lamps[i]) state.lamps[i].t = +sel.value || 0;
+  setLayout('manual');
   schedule();
 });
 $('lampBody').addEventListener('click', e => {
@@ -2364,6 +2434,7 @@ function download(name, data, type) {
 }
 
 $('reset').addEventListener('click', () => {
+  state.types = [];
   $('w').value = 60; $('l').value = 120; $('rh').value = 50;
   $('h').value = 35; $('step').value = '10';
   $('rho').value = 60; $('mf').value = 0.9; $('hours').value = 16;
@@ -2550,6 +2621,7 @@ function pcbRenderRows() {
       '<button type="button" class="mini" data-act="del" aria-label="Eemalda rida">×</button></div>';
   }).join('');
   box.innerHTML = hd + (rows || '<p class="hint">Lisa vähemalt üks LED.</p>');
+  decimalize($('pcbRows'));
 }
 function pcbRowEvents() {
   const box = $('pcbRows');
@@ -2794,6 +2866,137 @@ function pcbInit() {
 }
 
 /* =====================================================================
+   v3_17: koma kui kümnenderaldaja, mitu valgustitüüpi, ruudustiku paigutus
+   ===================================================================== */
+/** number fields accept "1,44" and "1.44": text input + own valueAsNumber */
+function decimalize(root) {
+  Array.prototype.forEach.call((root || document).querySelectorAll('input[type=number]'), el => {
+    el.type = 'text';
+    el.classList.add('num');
+    if (!el.getAttribute('inputmode')) el.setAttribute('inputmode', 'decimal');
+    el.setAttribute('autocomplete', 'off');
+    Object.defineProperty(el, 'valueAsNumber', {
+      configurable: true,
+      get() { const t = String(this.value).replace(/[\s ]/g, '').replace(',', '.'); return t === '' ? NaN : Number(t); },
+      set(v) { this.value = String(v); }
+    });
+  });
+}
+const lampFix = (sc, l) => (l && l.t && sc.types && sc.types[l.t - 1]) || sc.fix;
+
+/** field for mixed luminaire types = sum of one field per type */
+function computeMulti(sc) {
+  const groups = new Map();
+  sc.lamps.forEach(l => {
+    const k = (l.t && sc.types && sc.types[l.t - 1]) ? l.t : 0;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(l);
+  });
+  if (!groups.size || (groups.size === 1 && groups.has(0))) {
+    const r0 = computeField(sc);
+    r0.sh = sc.fix.sh;
+    return r0;
+  }
+  let acc = null, totalPPF = 0, totalW = 0, reduced = false;
+  const sh = { b: 0, g: 0, r: 0, fr: 0 };
+  groups.forEach((ls, k) => {
+    const fix = k ? sc.types[k - 1] : sc.fix;
+    const r = computeField(Object.assign({}, sc, { lamps: ls, fix }));
+    if (!acc) acc = Object.assign({}, r, { grid: r.grid.map(row => row.slice()) });
+    else for (let j = 0; j < acc.ny; j++) for (let i = 0; i < acc.nx; i++) acc.grid[j][i] += r.grid[j][i];
+    totalPPF += r.totalPPF; totalW += r.totalW; reduced = reduced || r.reduced || r.raised;
+    ['b', 'g', 'r', 'fr'].forEach(c => { sh[c] += (fix.sh ? fix.sh[c] : 0) * r.totalPPF; });
+  });
+  let sum = 0, mn = Infinity, mx = -Infinity;
+  acc.grid.forEach(row => row.forEach(E => { sum += E; if (E < mn) mn = E; if (E > mx) mx = E; }));
+  const avg = sum / acc.npts;
+  if (totalPPF > 0) ['b', 'g', 'r', 'fr'].forEach(c => { sh[c] /= totalPPF; });
+  return Object.assign(acc, {
+    avg, min: mn, max: mx,
+    u1: avg ? mn / avg : 0, u2: mx ? mn / mx : 0,
+    dli: avg * sc.hours * 3600 / 1e6,
+    frac: totalPPF > 0 ? avg * (sc.W / 100) * (sc.L / 100) / (totalPPF * sc.mf) : 0,
+    totalPPF, totalW, reduced, sh, multi: groups.size
+  });
+}
+
+function typesReportHtml(sc) {
+  if (!sc.types || !sc.types.length) return '';
+  const cnt = {};
+  sc.lamps.forEach(l => { const k = l.t || 0; cnt[k] = (cnt[k] || 0) + 1; });
+  const row = (name, f, n) => '<tr><td>' + escH(name) + '</td><td>' + n + ' tk</td><td>' + fmt(f.len, f.len < 10 ? 1 : 0) + ' × ' + fmt(f.wid, f.wid < 10 ? 1 : 0) + ' cm</td><td>' +
+    (f.lm != null ? fmtI(f.lm) + ' lm' : fmt(f.ppf, 1) + ' µmol/s') + '</td><td>' + fmt(f.watts, f.watts < 10 ? 2 : 0) + ' W</td><td>' + fmt(f.watts * n, 0) + ' W</td></tr>';
+  let h = '<h2>Valgustid tüüpide kaupa</h2><table><tr><th>Tüüp</th><th>Kogus</th><th>Mõõdud</th><th>Valgus / tk</th><th>W / tk</th><th>W kokku</th></tr>';
+  if (cnt[0]) h += row(sc.fix.label || 'Sammu 2 valgusti', sc.fix, cnt[0]);
+  sc.types.forEach((t, k) => { if (cnt[k + 1]) h += row('T' + (k + 1) + ' ' + t.label, t, cnt[k + 1]); });
+  return h + '</table>';
+}
+
+function renderTypeUI() {
+  const sc = state.scene;
+  const main = (sc && sc.fix.label) || 'Sammu 2 valgusti';
+  const gT = $('gT'), cur = gT.value;
+  gT.innerHTML = '<option value="0">' + escH(main) + '</option>' + state.types.map((t, k) => '<option value="' + (k + 1) + '">T' + (k + 1) + ' ' + escH(t.label) + '</option>').join('');
+  if (cur && +cur <= state.types.length) gT.value = cur;
+  $('typeList').innerHTML = state.types.map((t, k) => '<li>T' + (k + 1) + ' ' + escH(t.label) + ' · ' + fmt(t.watts, t.watts < 10 ? 2 : 0) + ' W' +
+    ' <button type="button" class="mini" data-tdel="' + (k + 1) + '" title="Kustutab tüübi ja selle valgustid">×</button></li>').join('');
+  gridInfo();
+}
+function gridSpec() {
+  const n = id => $(id).valueAsNumber;
+  return { t: +$('gT').value || 0, rot: $('gRot').checked ? 1 : 0,
+    R: Math.round(n('gR')), C: Math.round(n('gC')), x0: n('gX0'), y0: n('gY0'), dx: n('gDX'), dy: n('gDY') };
+}
+function gridInfo() {
+  const g = gridSpec(), el = $('gInfo'), sc = state.scene;
+  if (![g.R, g.C, g.x0, g.y0, g.dx, g.dy].every(isFinite) || g.R < 1 || g.C < 1) { el.textContent = 'Täida kõik väljad (ridu ja veerge vähemalt 1).'; return null; }
+  const x1 = g.x0 + (g.C - 1) * g.dx, y1 = g.y0 + (g.R - 1) * g.dy, N = g.R * g.C;
+  let t = '= ' + fmtI(N) + ' valgustit, x ' + fmt(g.x0, 1) + '…' + fmt(x1, 1) + ' cm, y ' + fmt(g.y0, 1) + '…' + fmt(y1, 1) + ' cm.';
+  if (sc && (x1 > sc.W || y1 > sc.L || g.x0 < 0 || g.y0 < 0)) t += ' ⚠ osa jääb ruumist (' + fmt(sc.W) + ' × ' + fmt(sc.L) + ' cm) välja.';
+  if (state.lamps.length + N > 5000) t += ' ⚠ kokku üle 5000 valgusti, arvutus muutub aeglaseks.';
+  el.textContent = t;
+  return g;
+}
+function gridPlace(replace) {
+  const g = gridInfo();
+  if (!g) return;
+  if (state.layout !== 'manual') setLayout('manual');
+  if (replace) state.lamps = state.lamps.filter(l => (l.t || 0) !== g.t);
+  for (let r = 0; r < g.R; r++)
+    for (let c = 0; c < g.C; c++)
+      state.lamps.push({ x: Math.round((g.x0 + c * g.dx) * 10) / 10, y: Math.round((g.y0 + r * g.dy) * 10) / 10, rot: g.rot, t: g.t });
+  schedule();
+}
+$('gAdd').addEventListener('click', () => gridPlace(false));
+$('gRep').addEventListener('click', () => gridPlace(true));
+$('gClr').addEventListener('click', () => { setLayout('manual'); state.lamps = []; schedule(); });
+['gT', 'gR', 'gC', 'gX0', 'gY0', 'gDX', 'gDY', 'gRot'].forEach(id => $(id).addEventListener('input', gridInfo));
+$('typeSave').addEventListener('click', () => {
+  const sc = state.scene;
+  if (!sc) return;
+  if (sc.strip) { $('typeName').value = ''; $('lampNote').textContent = 'LED-riba režiimi ei saa tüübiks salvestada.'; return; }
+  const f = sc.fix;
+  const name = ($('typeName').value || '').trim() || ((f.label || 'Valgusti') + ' ' + fmt(f.len, f.len < 10 ? 1 : 0) + '×' + fmt(f.wid, f.wid < 10 ? 1 : 0) + ' cm ' + fmt(f.watts, f.watts < 10 ? 2 : 0) + ' W');
+  state.types.push({ label: name, len: f.len, wid: f.wid, watts: f.watts, lm: f.lm, lmw: f.lmw, ppf: f.ppf, f: f.f, sh: Object.assign({}, f.sh), beamC0: f.beamC0, beamC90: f.beamC90, mode: f.mode });
+  $('typeName').value = '';
+  if (f.ies) $('lampNote').textContent = 'NB: IES-jaotust tüüpi ei salvestata, kasutatakse nurki ' + fmt(f.beamC0) + '° / ' + fmt(f.beamC90) + '°.';
+  $('gT').dataset.want = state.types.length;
+  renderTypeUI();
+  $('gT').value = String(state.types.length);
+  schedule();
+});
+$('typeList').addEventListener('click', e => {
+  const b = e.target.closest('button[data-tdel]');
+  if (!b) return;
+  const k = +b.dataset.tdel;
+  state.types.splice(k - 1, 1);
+  state.lamps = state.lamps.filter(l => (l.t || 0) !== k);
+  state.lamps.forEach(l => { if (l.t > k) l.t -= 1; });
+  renderTypeUI();
+  schedule();
+});
+
+/* =====================================================================
    v3_16: jagatav seadistuse link (#s=...) – kogu seadistus aadressis
    Vorming: #s=<base64url(JSON)>, JSON = { v:1, f:{id:väärtus}, lay, lamps:[[x,y,rot]], pcb:[[kind,K,cri,n,model]], st }
    f hoiab ainult vaikimisi väärtusest erinevaid välju. IES/LDT faili lingis ei ole.
@@ -2815,13 +3018,66 @@ function linkEncode() {
   const o = { v: 1, f };
   if (state.layout === 'manual') {
     o.lay = 'manual';
-    o.lamps = state.lamps.map(l => [Math.round(l.x * 10) / 10, Math.round(l.y * 10) / 10, Math.round((l.rot || 0) * 10) / 10]);
+    o.lamps = packLamps(state.lamps);
   }
+  if (state.types.length) o.ty = state.types.map(t => {
+    const r4 = v => (v == null ? null : Math.round(v * 1e4) / 1e4);
+    return { n: t.label, l: r4(t.len), w: r4(t.wid), W: r4(t.watts), lm: r4(t.lm), p: r4(t.ppf), f: r4(t.f), b0: t.beamC0, b9: t.beamC90, m: t.mode,
+      sh: [r4(t.sh.b), r4(t.sh.g), r4(t.sh.r), r4(t.sh.fr)] };
+  });
   if (pcb.types.length) o.pcb = pcb.types.map(t => [t.kind, t.K || 0, t.cri || 0, t.n || 1, t.model ? 1 : 0]);
   if (pcb.plant) { o.pl = pcb.plant; o.ps = pcb.stage; }
   if (state.step !== 1) o.st = state.step;
   if (state.ies) o.ies = 1;
   return b64uEnc(JSON.stringify(o));
+}
+/* lamps -> [[x,y,rot(,t)], {g:[x0,y0,dx,dy,C,R,rot,t]}, ...]; regular grids become one {g} entry (short links) */
+function packLamps(ls) {
+  const q = v => Math.round(v * 10) / 10, out = [];
+  const same = (a, b) => b && (a.rot || 0) === (b.rot || 0) && (a.t || 0) === (b.t || 0);
+  const near = (u, v) => Math.abs(q(u) - q(v)) < 0.051;
+  let i = 0;
+  while (i < ls.length) {
+    const a = ls[i], ax = q(a.x), ay = q(a.y);
+    let C = 1, dx = 0, R = 1, dy = 0;
+    const b = ls[i + 1];
+    if (same(a, b) && near(b.y, ay)) {
+      dx = Math.round((q(b.x) - ax) * 100) / 100;
+      if (Math.abs(dx) > 0.01) {
+        C = 2;
+        while (same(a, ls[i + C]) && near(ls[i + C].y, ay) && near(ls[i + C].x, ax + C * dx)) C++;
+      }
+    }
+    const nb = ls[i + C];
+    if (same(a, nb)) {
+      dy = Math.round((q(nb.y) - ay) * 100) / 100;
+      const fits = r => {
+        for (let c = 0; c < C; c++) {
+          const l = ls[i + r * C + c];
+          if (!same(a, l) || !near(l.x, ax + c * dx) || !near(l.y, ay + r * dy)) return false;
+        }
+        return true;
+      };
+      if (Math.abs(dy) > 0.01) while (fits(R)) R++;
+    }
+    if (C * R >= 4) { out.push({ g: [ax, ay, dx, dy, C, R, a.rot || 0, a.t || 0] }); i += C * R; }
+    else { const e = [ax, ay, Math.round((a.rot || 0) * 10) / 10]; if (a.t) e.push(a.t); out.push(e); i++; }
+  }
+  return out;
+}
+function unpackLamps(arr, nTypes) {
+  const q = v => Math.round(v * 10) / 10, out = [];
+  const tt = v => (+v > 0 && +v <= nTypes) ? +v : 0;
+  arr.forEach(e => {
+    if (Array.isArray(e)) out.push({ x: +e[0] || 0, y: +e[1] || 0, rot: +e[2] || 0, t: tt(e[3]) });
+    else if (e && Array.isArray(e.g)) {
+      const [x0, y0, dx, dy, C, R, rot, t] = e.g.map(Number);
+      const nC = Math.min(Math.max(1, C | 0), 5000), nR = Math.min(Math.max(1, R | 0), 5000);
+      for (let r = 0; r < nR && out.length < 20000; r++)
+        for (let c = 0; c < nC; c++) out.push({ x: q(x0 + c * dx), y: q(y0 + r * dy), rot: rot || 0, t: tt(t) });
+    }
+  });
+  return out;
 }
 function linkUrl() { return location.href.split('#')[0] + '#s=' + linkEncode(); }
 function linkSave() {
@@ -2840,6 +3096,13 @@ function linkRestore() {
   let o;
   try { o = JSON.parse(b64uDec(m[1])); } catch (err) { return { ok: false, err: 'link on vigane' }; }
   if (!o || typeof o !== 'object' || !o.f) return { ok: false, err: 'link on vigane' };
+  state.types = Array.isArray(o.ty) ? o.ty.filter(t => t && typeof t === 'object').map(t => {
+    const sh = Array.isArray(t.sh) ? t.sh : [0.15, 0.25, 0.6, 0];
+    const W = +t.W || 0, lm = t.lm == null ? null : +t.lm;
+    return { label: String(t.n || 'Tüüp'), len: Math.max(0.1, +t.l || 1), wid: Math.max(0.1, +t.w || 1), watts: W, lm, lmw: lm != null && W > 0 ? lm / W : null,
+      ppf: +t.p || 0, f: t.f == null ? null : +t.f, sh: { b: +sh[0] || 0, g: +sh[1] || 0, r: +sh[2] || 0, fr: +sh[3] || 0 },
+      beamC0: +t.b0 || 120, beamC90: +t.b9 || 120, mode: t.m === 'lm' ? 'lm' : 'ppf' };
+  }) : [];
   if (Array.isArray(o.pcb)) {
     pcb.types = [];
     o.pcb.forEach(a => { if (Array.isArray(a)) { const t = pcbAdd(String(a[0]), +a[1] || 0, +a[2] || 0, +a[3] || 1); if (a[4]) t.model = true; } });
@@ -2856,7 +3119,7 @@ function linkRestore() {
   if (o.f.preset === 'free') { const opt = Array.prototype.find.call($('preset').options, x => x.value === 'free'); if (opt) opt.textContent = 'Vabalt määratud (muudetud)'; }
   state.mapQ = $('mapQ').value;
   if (o.lay === 'manual' && Array.isArray(o.lamps) && o.lamps.length) {
-    state.lamps = o.lamps.filter(Array.isArray).map(a => ({ x: +a[0] || 0, y: +a[1] || 0, rot: +a[2] || 0 }));
+    state.lamps = unpackLamps(o.lamps, state.types.length);
     setLayout('manual');
   } else {
     const W = $('w').valueAsNumber || 60, L = $('l').valueAsNumber || 120;
@@ -2896,6 +3159,7 @@ window.addEventListener('hashchange', () => {
 });
 
 function init() {
+  decimalize(document);
   pcbInit();
   // theme
   let saved = null;
